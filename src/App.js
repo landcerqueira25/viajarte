@@ -1,13 +1,13 @@
-// src/App.js - VERSÃO COMPLETA COM TODAS AS PÁGINAS
+// src/App.js - VERSÃO CORRIGIDA PARA NETLIFY
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-// Importar todas as páginas que EXISTEM
-import Home from './pages/Home';
-import Dashboard from './pages/Dashboard';
-import TripView from './pages/TripView';
-import TripEditor from './pages/TripEditor';
-import Settings from './pages/Settings';
+// Importar todas as páginas com extensões explícitas
+import Home from './pages/Home.jsx';
+import Dashboard from './pages/Dashboard.jsx';
+import TripView from './pages/TripView.jsx';
+import TripEditor from './pages/TripEditor.jsx';
+import Settings from './pages/Settings.jsx';
 
 // Importar estilos
 import './index.css';
