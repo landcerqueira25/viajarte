@@ -160,7 +160,7 @@ const TripView = () => {
           gap: '1rem'
         }}>
           <button
-            onClick={() => navigate(`/trip/${id}/edit`)}
+            onClick={() => alert('Funcionalidade de editar viagem será implementada em breve!')}
             style={{
               backgroundColor: 'rgba(255,255,255,0.2)',
               border: 'none',
@@ -422,7 +422,7 @@ const TripView = () => {
                     <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🗺️</div>
                     <p>Nenhuma cidade adicionada ainda.</p>
                     <button
-                      onClick={() => navigate(`/trip/${id}/edit`)}
+                      onClick={() => alert('Funcionalidade de editar viagem será implementada em breve!')}
                       style={{
                         backgroundColor: '#7C9A92',
                         color: 'white',
@@ -560,7 +560,7 @@ const TripView = () => {
                   Adicione cidades ao seu roteiro para começar a planejar sua viagem!
                 </p>
                 <button
-                  onClick={() => navigate(`/trip/${id}/edit`)}
+                  onClick={() => alert('Funcionalidade de editar viagem será implementada em breve!')}
                   style={{
                     backgroundColor: '#7C9A92',
                     color: 'white',
@@ -625,7 +625,7 @@ const TripView = () => {
 
       {/* Botão Flutuante para Editar */}
       <button
-        onClick={() => navigate(`/trip/${id}/edit`)}
+        onClick={() => alert('Funcionalidade de editar viagem será implementada em breve!')}
         style={{
           position: 'fixed',
           bottom: '2rem',

@@ -159,16 +159,18 @@ const Dashboard = () => {
               {loading ? '⏳ Salvando...' : '🧪 Testar Firebase'}
             </button>
             
-            <button style={{
-              backgroundColor: '#7C9A92',
-              color: 'white',
-              border: 'none',
-              padding: '15px 30px',
-              borderRadius: '10px',
-              fontSize: '1.1rem',
-              cursor: 'pointer',
-              fontWeight: '600'
-            }}>
+            <button 
+              onClick={() => alert('Funcionalidade de criar nova viagem será implementada em breve!')}
+              style={{
+                backgroundColor: '#7C9A92',
+                color: 'white',
+                border: 'none',
+                padding: '15px 30px',
+                borderRadius: '10px',
+                fontSize: '1.1rem',
+                cursor: 'pointer',
+                fontWeight: '600'
+              }}>
               + Nova Viagem
             </button>
           </div>
@@ -262,8 +264,8 @@ const Dashboard = () => {
               }}
               onClick={() => {
                 if (trip.id && !trip.id.startsWith('exemplo-')) {
-                  // Navegação para viagens reais do Firebase
-                  window.location.href = `/trip/${trip.id}`;
+                  // Para viagens reais do Firebase - por enquanto só mostra alerta
+                  alert(`Viagem: ${trip.name}\nEm breve você poderá visualizar todos os detalhes!`);
                 } else {
                   // Para viagens de exemplo, mostrar alerta
                   alert('Esta é uma viagem de exemplo. Crie uma viagem real para visualizar os detalhes!');

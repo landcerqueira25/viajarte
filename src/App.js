@@ -1,13 +1,10 @@
-// src/App.js - VERSÃO COMPLETA COM TODAS AS PÁGINAS
+// src/App.js - VERSÃO MÍNIMA QUE FUNCIONA
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-// Importar todas as páginas
-import Home from './pages/Home';
+// Importar apenas as páginas que EXISTEM
 import Dashboard from './pages/Dashboard';
 import TripView from './pages/TripView';
-import TripEditor from './pages/TripEditor';
-import Settings from './pages/Settings';
 
 // Importar estilos
 import './index.css';
@@ -17,8 +14,8 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-          {/* Página inicial */}
-          <Route path="/" element={<Home />} />
+          {/* Redirecionar de / para /dashboard */}
+          <Route path="/" element={<Navigate to="/dashboard" />} />
           
           {/* Dashboard - lista de viagens */}
           <Route path="/dashboard" element={<Dashboard />} />
@@ -26,17 +23,13 @@ function App() {
           {/* Visualizar uma viagem específica */}
           <Route path="/trip/:id" element={<TripView />} />
           
-          {/* Criar nova viagem */}
-          <Route path="/trip/new" element={<TripEditor />} />
+          {/* Rotas futuras - por enquanto redirecionam para dashboard */}
+          <Route path="/trip/new" element={<Navigate to="/dashboard" />} />
+          <Route path="/trip/:id/edit" element={<Navigate to="/dashboard" />} />
+          <Route path="/settings" element={<Navigate to="/dashboard" />} />
           
-          {/* Editar viagem existente */}
-          <Route path="/trip/:id/edit" element={<TripEditor />} />
-          
-          {/* Configurações */}
-          <Route path="/settings" element={<Settings />} />
-          
-          {/* Rota catch-all: qualquer rota não encontrada vai para Home */}
-          <Route path="*" element={<Navigate to="/" />} />
+          {/* Catch-all: qualquer rota não encontrada vai para dashboard */}
+          <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </div>
     </Router>
