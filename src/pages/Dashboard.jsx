@@ -1,7 +1,7 @@
 // src/pages/Dashboard.jsx
-// VERSÃO COM FIREBASE CONECTADO!
+// VERSÃO COM FIREBASE CONECTADO E ESLINT CORRIGIDO!
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { collection, addDoc, getDocs } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
@@ -11,29 +11,28 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [firebaseStatus, setFirebaseStatus] = useState('🔄 Testando conexão...');
 
-  // Testar conexão com Firebase ao carregar
-useEffect(() => {
-  loadTrips();
-}, [loadTrips]); // ← Agora inclui loadTrips no array
-
-  // Função para testar Firebase
-  const testFirebaseConnection = async () => {
-    try {
-      // Tentar adicionar um documento de teste
-      await addDoc(collection(db, 'teste'), {
-        mensagem: 'Firebase funcionando!',
-        timestamp: new Date(),
-        teste: true
-      });
-      setFirebaseStatus('✅ Firebase conectado com sucesso!');
-    } catch (error) {
-      console.error('Erro Firebase:', error);
-      setFirebaseStatus('❌ Erro na conexão: ' + error.message);
+  // Viagens de exemplo (fallback)
+  const defaultTrips = [
+    {
+      id: 'exemplo-1',
+      name: "Europa dos Sonhos",
+      startDate: "2025-06-10",
+      endDate: "2025-06-25",
+      cities: ["Paris", "Roma", "Barcelona"],
+      image: "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      id: 'exemplo-2', 
+      name: "Aventura na Ásia",
+      startDate: "2025-09-05",
+      endDate: "2025-09-20",
+      cities: ["Tóquio", "Seoul"],
+      image: "https://images.unsplash.com/photo-1535139262971-c51845709a48?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
     }
-  };
+  ];
 
-  // Carregar viagens do Firebase
-  const loadTrips = async () => {
+  // Carregar viagens do Firebase (DEFINIDO ANTES DO useEffect)
+  const loadTrips = useCallback(async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'viagens'));
       const loadedTrips = [];
@@ -43,15 +42,23 @@ useEffect(() => {
       
       if (loadedTrips.length > 0) {
         setTrips(loadedTrips);
+        setFirebaseStatus('✅ Firebase conectado com sucesso!');
       } else {
         // Se não tem viagens no Firebase, usar exemplos
         setTrips(defaultTrips);
+        setFirebaseStatus('✅ Firebase conectado (usando dados de exemplo)');
       }
     } catch (error) {
       console.error('Erro ao carregar viagens:', error);
       setTrips(defaultTrips);
+      setFirebaseStatus('❌ Erro na conexão: ' + error.message);
     }
-  };
+  }, [defaultTrips]);
+
+  // Testar conexão com Firebase ao carregar (AGORA DEPOIS DA DEFINIÇÃO)
+  useEffect(() => {
+    loadTrips();
+  }, [loadTrips]);
 
   // Adicionar viagem de exemplo ao Firebase
   const addSampleTrip = async () => {
@@ -73,32 +80,14 @@ useEffect(() => {
       setTrips(prev => [...prev, { id: docRef.id, ...newTrip }]);
       
       alert('✅ Viagem salva no Firebase com sucesso!');
+      setFirebaseStatus('✅ Firebase conectado e funcionando perfeitamente!');
     } catch (error) {
       console.error('Erro ao salvar:', error);
       alert('❌ Erro ao salvar: ' + error.message);
+      setFirebaseStatus('❌ Erro na conexão: ' + error.message);
     }
     setLoading(false);
   };
-
-  // Viagens de exemplo (fallback)
-  const defaultTrips = [
-    {
-      id: 'exemplo-1',
-      name: "Europa dos Sonhos",
-      startDate: "2025-06-10",
-      endDate: "2025-06-25",
-      cities: ["Paris", "Roma", "Barcelona"],
-      image: "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
-    },
-    {
-      id: 'exemplo-2', 
-      name: "Aventura na Ásia",
-      startDate: "2025-09-05",
-      endDate: "2025-09-20",
-      cities: ["Tóquio", "Seoul"],
-      image: "https://images.unsplash.com/photo-1535139262971-c51845709a48?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
-    }
-  ];
 
   return (
     <div style={{ minHeight: '100vh', fontFamily: 'Montserrat, sans-serif' }}>
