@@ -12,10 +12,13 @@ const Dashboard = () => {
   const [firebaseStatus, setFirebaseStatus] = useState('🔄 Testando conexão...');
 
   // Testar conexão com Firebase ao carregar
-  useEffect(() => {
-    testFirebaseConnection();
-    loadTrips();
-  }, []);
+useEffect(() => {
+  const testAndLoad = async () => {
+    await testFirebaseConnection();
+    await loadTrips();
+  };
+  testAndLoad();
+}, []);
 
   // Função para testar Firebase
   const testFirebaseConnection = async () => {
