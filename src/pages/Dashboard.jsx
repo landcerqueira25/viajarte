@@ -249,23 +249,34 @@ const Dashboard = () => {
           gap: '2rem'
         }}>
           {trips.map((trip, index) => (
-            <div key={trip.id || index} style={{
-              backgroundColor: 'white',
-              borderRadius: '20px',
-              overflow: 'hidden',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-              transition: 'all 0.3s ease',
-              cursor: 'pointer',
-              border: trip.id && trip.id.startsWith('exemplo-') ? 'none' : '3px solid #22c55e'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-8px)';
-              e.currentTarget.style.boxShadow = '0 16px 32px rgba(0,0,0,0.2)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)';
-            }}>
+            <div 
+              key={trip.id || index} 
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '20px',
+                overflow: 'hidden',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer',
+                border: trip.id && trip.id.startsWith('exemplo-') ? 'none' : '3px solid #22c55e'
+              }}
+              onClick={() => {
+                if (trip.id && !trip.id.startsWith('exemplo-')) {
+                  // Navegação para viagens reais do Firebase
+                  window.location.href = `/trip/${trip.id}`;
+                } else {
+                  // Para viagens de exemplo, mostrar alerta
+                  alert('Esta é uma viagem de exemplo. Crie uma viagem real para visualizar os detalhes!');
+                }
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 16px 32px rgba(0,0,0,0.2)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)';
+              }}>
               <img src={trip.image} alt={trip.name} style={{
                 width: '100%',
                 height: '200px',
