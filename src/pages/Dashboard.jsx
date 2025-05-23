@@ -5,31 +5,31 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { collection, addDoc, getDocs } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
+// Viagens de exemplo (fallback) - MOVIDO PARA FORA DO COMPONENTE
+const defaultTrips = [
+  {
+    id: 'exemplo-1',
+    name: "Europa dos Sonhos",
+    startDate: "2025-06-10",
+    endDate: "2025-06-25",
+    cities: ["Paris", "Roma", "Barcelona"],
+    image: "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+  },
+  {
+    id: 'exemplo-2', 
+    name: "Aventura na Ásia",
+    startDate: "2025-09-05",
+    endDate: "2025-09-20",
+    cities: ["Tóquio", "Seoul"],
+    image: "https://images.unsplash.com/photo-1535139262971-c51845709a48?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+  }
+];
+
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(false);
   const [firebaseStatus, setFirebaseStatus] = useState('🔄 Testando conexão...');
-
-  // Viagens de exemplo (fallback)
-  const defaultTrips = [
-    {
-      id: 'exemplo-1',
-      name: "Europa dos Sonhos",
-      startDate: "2025-06-10",
-      endDate: "2025-06-25",
-      cities: ["Paris", "Roma", "Barcelona"],
-      image: "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
-    },
-    {
-      id: 'exemplo-2', 
-      name: "Aventura na Ásia",
-      startDate: "2025-09-05",
-      endDate: "2025-09-20",
-      cities: ["Tóquio", "Seoul"],
-      image: "https://images.unsplash.com/photo-1535139262971-c51845709a48?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
-    }
-  ];
 
   // Carregar viagens do Firebase (DEFINIDO ANTES DO useEffect)
   const loadTrips = useCallback(async () => {
@@ -53,7 +53,7 @@ const Dashboard = () => {
       setTrips(defaultTrips);
       setFirebaseStatus('❌ Erro na conexão: ' + error.message);
     }
-  }, [defaultTrips]);
+  }, []); // SEM dependências - defaultTrips é constante externa
 
   // Testar conexão com Firebase ao carregar (AGORA DEPOIS DA DEFINIÇÃO)
   useEffect(() => {
