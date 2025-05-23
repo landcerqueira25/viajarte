@@ -13,12 +13,8 @@ const Dashboard = () => {
 
   // Testar conexão com Firebase ao carregar
 useEffect(() => {
-  const testAndLoad = async () => {
-    await testFirebaseConnection();
-    await loadTrips();
-  };
-  testAndLoad();
-}, []);
+  loadTrips();
+}, [loadTrips]); // ← Agora inclui loadTrips no array
 
   // Função para testar Firebase
   const testFirebaseConnection = async () => {
