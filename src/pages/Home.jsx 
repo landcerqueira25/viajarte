@@ -44,6 +44,31 @@ const Home = () => {
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <button
+            onClick={() => navigate('/settings')}
+            style={{
+              backgroundColor: 'transparent',
+              color: 'white',
+              border: '2px solid white',
+              padding: '10px 20px',
+              borderRadius: '25px',
+              fontSize: '1rem',
+              cursor: 'pointer',
+              fontWeight: '500',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = 'white';
+              e.currentTarget.style.color = '#7C9A92';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = 'white';
+            }}
+          >
+            ⚙️ Configurações
+          </button>
+          
+          <button
             onClick={() => navigate('/dashboard')}
             style={{
               backgroundColor: 'transparent',
@@ -380,17 +405,37 @@ const Home = () => {
           flexWrap: 'wrap',
           marginBottom: '2rem'
         }}>
-          <a href="#" style={{ color: 'white', textDecoration: 'none', opacity: '0.7' }}>
-            Sobre
-          </a>
+          <button 
+            onClick={() => navigate('/dashboard')}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'white', 
+              textDecoration: 'none', 
+              opacity: '0.7',
+              cursor: 'pointer'
+            }}
+          >
+            Dashboard
+          </button>
+          <button 
+            onClick={() => navigate('/settings')}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'white', 
+              textDecoration: 'none', 
+              opacity: '0.7',
+              cursor: 'pointer'
+            }}
+          >
+            Configurações
+          </button>
           <a href="#" style={{ color: 'white', textDecoration: 'none', opacity: '0.7' }}>
             Contato
           </a>
           <a href="#" style={{ color: 'white', textDecoration: 'none', opacity: '0.7' }}>
             Privacidade
-          </a>
-          <a href="#" style={{ color: 'white', textDecoration: 'none', opacity: '0.7' }}>
-            Termos
           </a>
         </div>
         

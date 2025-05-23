@@ -1,5 +1,5 @@
 // src/pages/Dashboard.jsx
-// VERSÃO COM FIREBASE CONECTADO E ESLINT CORRIGIDO!
+// VERSÃO SEM REACT ROUTER - COMPATÍVEL COM APP SIMPLES
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { collection, addDoc, getDocs } from 'firebase/firestore';
@@ -25,7 +25,7 @@ const defaultTrips = [
   }
 ];
 
-const Dashboard = () => {
+const Dashboard = ({ onTripClick }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -264,8 +264,12 @@ const Dashboard = () => {
               }}
               onClick={() => {
                 if (trip.id && !trip.id.startsWith('exemplo-')) {
-                  // Para viagens reais do Firebase - por enquanto só mostra alerta
-                  alert(`Viagem: ${trip.name}\nEm breve você poderá visualizar todos os detalhes!`);
+                  // Para viagens reais do Firebase - usar callback de navegação
+                  if (onTripClick) {
+                    onTripClick(trip.id);
+                  } else {
+                    alert(`Viagem: ${trip.name}\nEm breve você poderá visualizar todos os detalhes!`);
+                  }
                 } else {
                   // Para viagens de exemplo, mostrar alerta
                   alert('Esta é uma viagem de exemplo. Crie uma viagem real para visualizar os detalhes!');

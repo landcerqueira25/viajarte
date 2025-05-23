@@ -1,4 +1,6 @@
 // src/pages/TripView.jsx
+// VERSÃO COMPLETA COM REACT ROUTER
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
@@ -160,7 +162,7 @@ const TripView = () => {
           gap: '1rem'
         }}>
           <button
-            onClick={() => alert('Funcionalidade de editar viagem será implementada em breve!')}
+            onClick={() => navigate(`/trip/${id}/edit`)}
             style={{
               backgroundColor: 'rgba(255,255,255,0.2)',
               border: 'none',
@@ -422,7 +424,7 @@ const TripView = () => {
                     <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🗺️</div>
                     <p>Nenhuma cidade adicionada ainda.</p>
                     <button
-                      onClick={() => alert('Funcionalidade de editar viagem será implementada em breve!')}
+                      onClick={() => navigate(`/trip/${id}/edit`)}
                       style={{
                         backgroundColor: '#7C9A92',
                         color: 'white',
@@ -560,7 +562,7 @@ const TripView = () => {
                   Adicione cidades ao seu roteiro para começar a planejar sua viagem!
                 </p>
                 <button
-                  onClick={() => alert('Funcionalidade de editar viagem será implementada em breve!')}
+                  onClick={() => navigate(`/trip/${id}/edit`)}
                   style={{
                     backgroundColor: '#7C9A92',
                     color: 'white',
@@ -625,7 +627,7 @@ const TripView = () => {
 
       {/* Botão Flutuante para Editar */}
       <button
-        onClick={() => alert('Funcionalidade de editar viagem será implementada em breve!')}
+        onClick={() => navigate(`/trip/${id}/edit`)}
         style={{
           position: 'fixed',
           bottom: '2rem',

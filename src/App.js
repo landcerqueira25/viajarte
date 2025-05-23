@@ -1,10 +1,13 @@
-// src/App.js - VERSÃO MÍNIMA QUE FUNCIONA
+// src/App.js - VERSÃO COMPLETA COM TODAS AS PÁGINAS
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-// Importar apenas as páginas que EXISTEM
+// Importar todas as páginas que EXISTEM
+import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import TripView from './pages/TripView';
+import TripEditor from './pages/TripEditor';
+import Settings from './pages/Settings';
 
 // Importar estilos
 import './index.css';
@@ -14,8 +17,8 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-          {/* Redirecionar de / para /dashboard */}
-          <Route path="/" element={<Navigate to="/dashboard" />} />
+          {/* Página inicial - Home */}
+          <Route path="/" element={<Home />} />
           
           {/* Dashboard - lista de viagens */}
           <Route path="/dashboard" element={<Dashboard />} />
@@ -23,13 +26,17 @@ function App() {
           {/* Visualizar uma viagem específica */}
           <Route path="/trip/:id" element={<TripView />} />
           
-          {/* Rotas futuras - por enquanto redirecionam para dashboard */}
-          <Route path="/trip/new" element={<Navigate to="/dashboard" />} />
-          <Route path="/trip/:id/edit" element={<Navigate to="/dashboard" />} />
-          <Route path="/settings" element={<Navigate to="/dashboard" />} />
+          {/* Criar nova viagem */}
+          <Route path="/trip/new" element={<TripEditor />} />
           
-          {/* Catch-all: qualquer rota não encontrada vai para dashboard */}
-          <Route path="*" element={<Navigate to="/dashboard" />} />
+          {/* Editar viagem existente */}
+          <Route path="/trip/:id/edit" element={<TripEditor />} />
+          
+          {/* Configurações */}
+          <Route path="/settings" element={<Settings />} />
+          
+          {/* Catch-all: qualquer rota não encontrada vai para Home */}
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
     </Router>
