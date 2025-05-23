@@ -1,0 +1,411 @@
+// src/pages/Home.jsx
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const Home = () => {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+
+  const handleGetStarted = () => {
+    navigate('/dashboard');
+  };
+
+  const handleEmailSubmit = (e) => {
+    e.preventDefault();
+    if (email.trim()) {
+      alert(`Obrigado pelo interesse, ${email}! Em breve enviaremos novidades.`);
+      setEmail('');
+    }
+  };
+
+  return (
+    <div style={{ 
+      minHeight: '100vh', 
+      fontFamily: 'Montserrat, sans-serif',
+      background: 'linear-gradient(135deg, #7C9A92 0%, #D9A6A0 100%)'
+    }}>
+      {/* Navbar */}
+      <nav style={{
+        padding: '1rem 2rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(10px)'
+      }}>
+        <div style={{
+          fontSize: '2rem',
+          fontWeight: 'bold',
+          fontFamily: 'Cormorant Garamond, serif',
+          color: 'white'
+        }}>
+          🌟 Viajarte
+        </div>
+        
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <button
+            onClick={() => navigate('/dashboard')}
+            style={{
+              backgroundColor: 'transparent',
+              color: 'white',
+              border: '2px solid white',
+              padding: '10px 20px',
+              borderRadius: '25px',
+              fontSize: '1rem',
+              cursor: 'pointer',
+              fontWeight: '500',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = 'white';
+              e.currentTarget.style.color = '#7C9A92';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = 'white';
+            }}
+          >
+            Acessar Dashboard
+          </button>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '80vh',
+        padding: '2rem',
+        textAlign: 'center',
+        color: 'white'
+      }}>
+        <div style={{ maxWidth: '800px' }}>
+          <h1 style={{
+            fontSize: '4rem',
+            fontFamily: 'Cormorant Garamond, serif',
+            fontWeight: 'bold',
+            margin: '0 0 2rem 0',
+            lineHeight: '1.2'
+          }}>
+            Crie Roteiros de Viagem
+            <br />
+            <span style={{ color: '#EAC8C2' }}>Inesquecíveis</span>
+          </h1>
+          
+          <p style={{
+            fontSize: '1.4rem',
+            margin: '0 0 3rem 0',
+            lineHeight: '1.6',
+            opacity: '0.9'
+          }}>
+            Planeje suas aventuras de forma simples e intuitiva. 
+            Organize destinos, atividades e memories tudo em um só lugar.
+          </p>
+          
+          <div style={{
+            display: 'flex',
+            gap: '2rem',
+            justifyContent: 'center',
+            flexWrap: 'wrap'
+          }}>
+            <button
+              onClick={handleGetStarted}
+              style={{
+                backgroundColor: 'white',
+                color: '#7C9A92',
+                border: 'none',
+                padding: '18px 40px',
+                borderRadius: '50px',
+                fontSize: '1.2rem',
+                cursor: 'pointer',
+                fontWeight: '600',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.3)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)';
+              }}
+            >
+              🚀 Começar Agora
+            </button>
+            
+            <button
+              onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}
+              style={{
+                backgroundColor: 'transparent',
+                color: 'white',
+                border: '2px solid white',
+                padding: '18px 40px',
+                borderRadius: '50px',
+                fontSize: '1.2rem',
+                cursor: 'pointer',
+                fontWeight: '600',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              ✨ Descobrir Mais
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Features Section */}
+      <div id="features" style={{
+        backgroundColor: 'white',
+        padding: '6rem 2rem',
+        textAlign: 'center'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <h2 style={{
+            fontSize: '3rem',
+            fontFamily: 'Cormorant Garamond, serif',
+            color: '#2C3639',
+            marginBottom: '4rem'
+          }}>
+            Por que escolher o Viajarte?
+          </h2>
+          
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '3rem',
+            marginBottom: '4rem'
+          }}>
+            {[
+              {
+                icon: '🗺️',
+                title: 'Planejamento Intuitivo',
+                description: 'Interface simples e visual para organizar cada detalhe da sua viagem'
+              },
+              {
+                icon: '📅',
+                title: 'Calendário Interativo',
+                description: 'Visualize seu roteiro dia a dia com calendário inteligente'
+              },
+              {
+                icon: '✅',
+                title: 'Checklist Personalizado',
+                description: 'Nunca mais esqueça nada com nossas listas de preparação'
+              },
+              {
+                icon: '📸',
+                title: 'Galeria de Memórias',
+                description: 'Guarde e organize todas as fotos das suas aventuras'
+              },
+              {
+                icon: '🔄',
+                title: 'Sincronização Automática',
+                description: 'Acesse seus roteiros de qualquer dispositivo, sempre atualizados'
+              },
+              {
+                icon: '🎨',
+                title: 'Design Elegante',
+                description: 'Interface bonita e moderna que torna o planejamento prazeroso'
+              }
+            ].map((feature, index) => (
+              <div
+                key={index}
+                style={{
+                  backgroundColor: '#f8f9fa',
+                  padding: '2.5rem 2rem',
+                  borderRadius: '20px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-8px)';
+                  e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.15)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                }}
+              >
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
+                  {feature.icon}
+                </div>
+                <h3 style={{
+                  fontSize: '1.5rem',
+                  fontFamily: 'Cormorant Garamond, serif',
+                  color: '#2C3639',
+                  marginBottom: '1rem'
+                }}>
+                  {feature.title}
+                </h3>
+                <p style={{
+                  color: '#666',
+                  lineHeight: '1.6',
+                  fontSize: '1rem'
+                }}>
+                  {feature.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div style={{
+        background: 'linear-gradient(135deg, #2C3639 0%, #7C9A92 100%)',
+        padding: '6rem 2rem',
+        textAlign: 'center',
+        color: 'white'
+      }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <h2 style={{
+            fontSize: '2.5rem',
+            fontFamily: 'Cormorant Garamond, serif',
+            marginBottom: '1.5rem'
+          }}>
+            Pronto para sua próxima aventura?
+          </h2>
+          
+          <p style={{
+            fontSize: '1.2rem',
+            marginBottom: '3rem',
+            opacity: '0.9',
+            lineHeight: '1.6'
+          }}>
+            Junte-se a milhares de viajantes que já descobriram 
+            uma forma mais organizada e divertida de planejar viagens.
+          </p>
+          
+          <form onSubmit={handleEmailSubmit} style={{
+            display: 'flex',
+            gap: '1rem',
+            maxWidth: '400px',
+            margin: '0 auto 2rem',
+            flexWrap: 'wrap',
+            justifyContent: 'center'
+          }}>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Seu melhor email"
+              style={{
+                flex: '1',
+                minWidth: '200px',
+                padding: '14px 20px',
+                borderRadius: '25px',
+                border: 'none',
+                fontSize: '1rem',
+                outline: 'none'
+              }}
+            />
+            <button
+              type="submit"
+              style={{
+                backgroundColor: '#D9A6A0',
+                color: 'white',
+                border: 'none',
+                padding: '14px 30px',
+                borderRadius: '25px',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                fontWeight: '600',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              📬 Me Avise
+            </button>
+          </form>
+          
+          <button
+            onClick={handleGetStarted}
+            style={{
+              backgroundColor: 'white',
+              color: '#2C3639',
+              border: 'none',
+              padding: '18px 40px',
+              borderRadius: '50px',
+              fontSize: '1.2rem',
+              cursor: 'pointer',
+              fontWeight: '600',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            🌟 Começar Gratuitamente
+          </button>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer style={{
+        backgroundColor: '#2C3639',
+        color: 'white',
+        padding: '3rem 2rem 2rem',
+        textAlign: 'center'
+      }}>
+        <div style={{
+          fontSize: '1.5rem',
+          fontFamily: 'Cormorant Garamond, serif',
+          marginBottom: '1rem'
+        }}>
+          🌟 Viajarte
+        </div>
+        
+        <p style={{
+          opacity: '0.7',
+          margin: '0 0 2rem 0'
+        }}>
+          Transformando sonhos de viagem em roteiros organizados
+        </p>
+        
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '2rem',
+          flexWrap: 'wrap',
+          marginBottom: '2rem'
+        }}>
+          <a href="#" style={{ color: 'white', textDecoration: 'none', opacity: '0.7' }}>
+            Sobre
+          </a>
+          <a href="#" style={{ color: 'white', textDecoration: 'none', opacity: '0.7' }}>
+            Contato
+          </a>
+          <a href="#" style={{ color: 'white', textDecoration: 'none', opacity: '0.7' }}>
+            Privacidade
+          </a>
+          <a href="#" style={{ color: 'white', textDecoration: 'none', opacity: '0.7' }}>
+            Termos
+          </a>
+        </div>
+        
+        <p style={{
+          opacity: '0.5',
+          fontSize: '0.9rem',
+          margin: '0',
+          borderTop: '1px solid rgba(255,255,255,0.1)',
+          paddingTop: '2rem'
+        }}>
+          © 2025 Viajarte. Feito com ❤️ para viajantes apaixonados.
+        </p>
+      </footer>
+    </div>
+  );
+};
+
+export default Home;
