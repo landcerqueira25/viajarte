@@ -214,7 +214,7 @@ const EnhancedTripEditor = () => {
     }, 1500);
   };
 
-  // Função para salvar viagem
+  // Função para salvar viagem - MELHORADA
   const handleSave = async () => {
     // Validações
     if (!tripData.name.trim()) {
@@ -223,7 +223,7 @@ const EnhancedTripEditor = () => {
     }
     
     if (!tripData.startDate || !tripData.endDate) {
-      alert('Por favor, selecione as datas de início e fim');
+      alert('Por favor, selecione as datas de início e fim da viagem');
       return;
     }
     
@@ -235,6 +235,39 @@ const EnhancedTripEditor = () => {
     if (tripData.cities.length === 0) {
       alert('Adicione pelo menos uma cidade ao roteiro');
       return;
+    }
+
+    // Verificar se as cidades têm datas definidas
+    const citiesWithoutDates = tripData.cities.filter(city => !city.startDate || !city.endDate);
+    if (citiesWithoutDates.length > 0) {
+      const proceed = window.confirm(
+        `${citiesWithoutDates.length} cidade(s) não têm datas definidas. ` +
+        'As datas serão calculadas automaticamente baseado no período da viagem. Continuar?'
+      );
+      
+      if (!proceed) return;
+      
+      // Recalcular datas para todas as cidades
+      const updatedCities = tripData.cities.map((city, index) => {
+        if (!city.startDate || !city.endDate) {
+          const totalDays = Math.ceil((new Date(tripData.endDate) - new Date(tripData.startDate)) / (1000 * 60 * 60 * 24)) + 1;
+          const daysPerCity = Math.max(1, Math.floor(totalDays / tripData.cities.length));
+          
+          const cityStartDate = new Date(new Date(tripData.startDate).getTime() + (index * daysPerCity * 24 * 60 * 60 * 1000));
+          const cityEndDate = new Date(cityStartDate.getTime() + ((daysPerCity - 1) * 24 * 60 * 60 * 1000));
+          
+          return {
+            ...city,
+            startDate: cityStartDate.toISOString().split('T')[0],
+            endDate: cityEndDate.toISOString().split('T')[0],
+            weatherInfo: cityHelpers.getWeatherInfo(city.id, cityStartDate.getMonth() + 1)
+          };
+        }
+        return city;
+      });
+      
+      // Atualizar o estado com as novas datas
+      setTripData(prev => ({ ...prev, cities: updatedCities }));
     }
 
     setLoading(true);
@@ -671,10 +704,29 @@ const EnhancedTripEditor = () => {
                   fontSize: '1.8rem',
                   fontFamily: 'Cormorant Garamond, serif',
                   color: '#2C3639',
-                  marginBottom: '2rem'
+                  marginBottom: '1rem'
                 }}>
                   🏙️ Cidades do Roteiro
                 </h2>
+
+                {/* Dica sobre datas */}
+                {(!tripData.startDate || !tripData.endDate) && (
+                  <div style={{
+                    backgroundColor: '#fff3cd',
+                    border: '1px solid #ffeaa7',
+                    borderRadius: '8px',
+                    padding: '1rem',
+                    marginBottom: '2rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <span style={{ fontSize: '1.2rem' }}>💡</span>
+                    <div>
+                      <strong>Dica:</strong> Configure as datas de início e fim da viagem na aba "Informações Básicas" para que as datas das cidades sejam calculadas automaticamente!
+                    </div>
+                  </div>
+                )}
 
                 {/* Buscar e Adicionar Cidades */}
                 <div style={{
@@ -1417,15 +1469,24 @@ const EnhancedTripEditor = () => {
                                   {index + 1}. {city.name}, {city.country}
                                 </h4>
                                 
-                                {city.startDate && city.endDate && (
-                                  <p style={{
-                                    fontSize: '0.9rem',
-                                    color: '#666',
-                                    margin: '0 0 0.5rem 0'
-                                  }}>
-                                    📅 {new Date(city.startDate).toLocaleDateString('pt-BR')} a {new Date(city.endDate).toLocaleDateString('pt-BR')}
-                                  </p>
-                                )}
+                              {city.startDate && city.endDate ? (
+                                <p style={{
+                                  fontSize: '0.9rem',
+                                  color: '#666',
+                                  margin: '0 0 0.5rem 0'
+                                }}>
+                                  📅 {new Date(city.startDate).toLocaleDateString('pt-BR')} a {new Date(city.endDate).toLocaleDateString('pt-BR')}
+                                </p>
+                              ) : (
+                                <p style={{
+                                  fontSize: '0.9rem',
+                                  color: '#ff6b6b',
+                                  margin: '0 0 0.5rem 0',
+                                  fontStyle: 'italic'
+                                }}>
+                                  📅 Configure as datas da viagem para calcular automaticamente
+                                </p>
+                              )}
                                 
                                 <div style={{
                                   display: 'flex',
