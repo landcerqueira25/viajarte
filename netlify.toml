@@ -1,0 +1,27 @@
+# netlify.toml - Configuração do Netlify
+
+[build]
+  # Comando de build
+  command = "CI=false npm run build"
+  # Diretório de saída
+  publish = "build"
+
+[build.environment]
+  # Variáveis de ambiente para o build
+  CI = "false"
+  GENERATE_SOURCEMAP = "false"
+  DISABLE_ESLINT_PLUGIN = "true"
+
+# Configurações de redirecionamento para SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers de segurança
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
