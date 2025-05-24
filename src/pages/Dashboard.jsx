@@ -1,9 +1,9 @@
 // src/pages/Dashboard.jsx
-// VERSÃO FINAL LIMPA - SEM ELEMENTOS DE TESTE DO FIREBASE
+// VERSÃO COM FUNCIONALIDADE DE EXCLUIR VIAGENS
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
 // Viagens de exemplo (fallback)
@@ -31,6 +31,8 @@ const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteModal, setDeleteModal] = useState({ show: false, trip: null });
+  const [deletingId, setDeletingId] = useState(null);
 
   // Carregar viagens do Firebase
   const loadTrips = useCallback(async () => {
@@ -75,6 +77,47 @@ const Dashboard = () => {
     }
   };
 
+  // Abrir modal de confirmação de exclusão
+  const handleDeleteClick = (e, trip) => {
+    e.stopPropagation(); // Evita que clique no card
+    setDeleteModal({ show: true, trip });
+  };
+
+  // Confirmar exclusão da viagem
+  const confirmDelete = async () => {
+    if (!deleteModal.trip) return;
+    
+    setDeletingId(deleteModal.trip.id);
+    
+    try {
+      // Se for uma viagem real (não exemplo), deletar do Firebase
+      if (!deleteModal.trip.id.startsWith('exemplo-')) {
+        await deleteDoc(doc(db, 'viagens', deleteModal.trip.id));
+      }
+      
+      // Remover da lista local (tanto exemplos quanto viagens reais)
+      setTrips(prev => prev.filter(trip => trip.id !== deleteModal.trip.id));
+      
+      // Fechar modal
+      setDeleteModal({ show: false, trip: null });
+      
+      // Mostrar sucesso
+      const isExample = deleteModal.trip.id.startsWith('exemplo-');
+      alert(isExample ? '✅ Viagem de exemplo removida!' : '✅ Viagem excluída com sucesso!');
+      
+    } catch (error) {
+      console.error('Erro ao excluir viagem:', error);
+      alert('❌ Erro ao excluir viagem: ' + error.message);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // Cancelar exclusão
+  const cancelDelete = () => {
+    setDeleteModal({ show: false, trip: null });
+  };
+
   // Calcular dias restantes para a viagem
   const calculateDaysUntilTrip = (startDate) => {
     const today = new Date();
@@ -97,7 +140,7 @@ const Dashboard = () => {
     }
   };
 
-  // Filtrar viagens baseado na busca - CORRIGIDO
+  // Filtrar viagens baseado na busca
   const filteredTrips = trips.filter(trip => {
     const searchLower = searchTerm.toLowerCase();
     const nameMatch = trip.name.toLowerCase().includes(searchLower);
@@ -136,6 +179,131 @@ const Dashboard = () => {
 
   return (
     <div style={{ minHeight: '100vh', fontFamily: 'Montserrat, sans-serif', backgroundColor: '#f8f9fa' }}>
+      {/* Modal de Confirmação de Exclusão */}
+      {deleteModal.show && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '2rem'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '20px',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '100%',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+            transform: deleteModal.show ? 'scale(1)' : 'scale(0.9)',
+            transition: 'all 0.3s ease'
+          }}>
+            <div style={{
+              textAlign: 'center',
+              marginBottom: '2rem'
+            }}>
+              <div style={{
+                fontSize: '4rem',
+                marginBottom: '1rem'
+              }}>
+                🗑️
+              </div>
+              <h3 style={{
+                fontSize: '1.8rem',
+                fontFamily: 'Cormorant Garamond, serif',
+                color: '#dc3545',
+                margin: '0 0 1rem 0'
+              }}>
+                Excluir Viagem?
+              </h3>
+              <p style={{
+                fontSize: '1.1rem',
+                color: '#666',
+                margin: '0 0 0.5rem 0'
+              }}>
+                Tem certeza que deseja excluir:
+              </p>
+              <p style={{
+                fontSize: '1.3rem',
+                fontWeight: 'bold',
+                color: '#2C3639',
+                margin: '0'
+              }}>
+                "{deleteModal.trip?.name}"?
+              </p>
+            </div>
+
+            <div style={{
+              backgroundColor: '#fff8f8',
+              border: '2px solid #ffe6e6',
+              borderRadius: '10px',
+              padding: '1rem',
+              marginBottom: '2rem'
+            }}>
+              <p style={{
+                color: '#dc3545',
+                fontSize: '0.9rem',
+                margin: '0',
+                textAlign: 'center'
+              }}>
+                ⚠️ {deleteModal.trip?.id.startsWith('exemplo-') 
+                  ? 'Esta viagem de exemplo será removida da lista.'
+                  : 'Esta ação não pode ser desfeita. Todos os dados da viagem serão perdidos permanentemente.'
+                }
+              </p>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              gap: '1rem',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={cancelDelete}
+                disabled={deletingId === deleteModal.trip?.id}
+                style={{
+                  backgroundColor: '#e0e0e0',
+                  color: '#666',
+                  border: 'none',
+                  padding: '12px 24px',
+                  borderRadius: '10px',
+                  fontSize: '1rem',
+                  cursor: deletingId === deleteModal.trip?.id ? 'not-allowed' : 'pointer',
+                  fontWeight: '600',
+                  opacity: deletingId === deleteModal.trip?.id ? 0.6 : 1
+                }}
+              >
+                Cancelar
+              </button>
+              
+              <button
+                onClick={confirmDelete}
+                disabled={deletingId === deleteModal.trip?.id}
+                style={{
+                  backgroundColor: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 24px',
+                  borderRadius: '10px',
+                  fontSize: '1rem',
+                  cursor: deletingId === deleteModal.trip?.id ? 'not-allowed' : 'pointer',
+                  fontWeight: '600',
+                  opacity: deletingId === deleteModal.trip?.id ? 0.6 : 1
+                }}
+              >
+                {deletingId === deleteModal.trip?.id ? '⏳ Excluindo...' : '🗑️ Excluir Viagem'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Navbar */}
       <nav style={{
         backgroundColor: '#7C9A92',
@@ -165,7 +333,6 @@ const Dashboard = () => {
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          {/* Botão Home */}
           <button
             onClick={() => navigate('/')}
             style={{
@@ -191,7 +358,6 @@ const Dashboard = () => {
             🏠 Home
           </button>
 
-          {/* Botão Configurações */}
           <button
             onClick={() => navigate('/settings')}
             style={{
@@ -217,7 +383,6 @@ const Dashboard = () => {
             ⚙️ Configurações
           </button>
 
-          {/* Avatar */}
           <div style={{
             width: '40px',
             height: '40px',
@@ -430,6 +595,7 @@ const Dashboard = () => {
           }}>
             {filteredTrips.map((trip, index) => {
               const daysInfo = calculateDaysUntilTrip(trip.startDate);
+              const isExample = trip.id.startsWith('exemplo-');
               
               return (
                 <div 
@@ -441,7 +607,8 @@ const Dashboard = () => {
                     boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                     transition: 'all 0.3s ease',
                     cursor: 'pointer',
-                    border: trip.id && trip.id.startsWith('exemplo-') ? '2px solid #f0f0f0' : '2px solid #e8f4f3'
+                    border: isExample ? '2px solid #f0f0f0' : '2px solid #e8f4f3',
+                    position: 'relative'
                   }}
                   onClick={() => handleTripClick(trip.id)}
                   onMouseOver={(e) => {
@@ -478,7 +645,7 @@ const Dashboard = () => {
                     </div>
                     
                     {/* Badge Firebase/Exemplo */}
-                    {trip.id && !trip.id.startsWith('exemplo-') && (
+                    {!isExample && (
                       <div style={{
                         position: 'absolute',
                         top: '1rem',
@@ -493,6 +660,41 @@ const Dashboard = () => {
                         SALVA
                       </div>
                     )}
+
+                    {/* Botão de Excluir - Para todas as viagens */}
+                    <button
+                      onClick={(e) => handleDeleteClick(e, trip)}
+                      style={{
+                        position: 'absolute',
+                        bottom: '1rem',
+                        right: '1rem',
+                        backgroundColor: 'rgba(220, 53, 69, 0.9)',
+                        color: 'white',
+                        border: 'none',
+                        padding: '8px',
+                        borderRadius: '50%',
+                        fontSize: '1rem',
+                        cursor: 'pointer',
+                        width: '36px',
+                        height: '36px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.3s ease',
+                        backdropFilter: 'blur(10px)'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = '#dc3545';
+                        e.currentTarget.style.transform = 'scale(1.1)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(220, 53, 69, 0.9)';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                      title="Excluir viagem"
+                    >
+                      🗑️
+                    </button>
                   </div>
                   
                   <div style={{ padding: '1.5rem' }}>
