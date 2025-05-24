@@ -1,0 +1,10 @@
+# public/_redirects
+# Arquivo para resolver 404 em SPAs React no Netlify/Vercel
+
+# Todas as rotas devem servir o index.html (SPA)
+/*    /index.html   200
+
+# Redirecionamentos específicos (opcional)
+/home                   /             301
+/viagens                /dashboard    301
+/configuracoes          /settings     301

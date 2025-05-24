@@ -1,5 +1,5 @@
 // src/pages/Dashboard.jsx
-// VERSÃO COM FUNCIONALIDADE DE EXCLUIR VIAGENS
+// VERSÃO ULTRA SEGURA - ERRO DE OBJETOS CORRIGIDO
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -34,25 +34,149 @@ const Dashboard = () => {
   const [deleteModal, setDeleteModal] = useState({ show: false, trip: null });
   const [deletingId, setDeletingId] = useState(null);
 
+  // 🛡️ FUNÇÃO ULTRA SEGURA - Extrair nome da cidade
+  const getCityName = (city) => {
+    console.log('🔍 getCityName input:', typeof city, city);
+    
+    // Se é null, undefined ou falsy
+    if (!city) {
+      console.log('⚠️ getCityName: cidade vazia');
+      return '';
+    }
+    
+    // Se é uma string, retorna direto
+    if (typeof city === 'string') {
+      console.log('✅ getCityName: string encontrada:', city);
+      return city.trim();
+    }
+    
+    // Se é um objeto, tenta extrair o nome
+    if (typeof city === 'object') {
+      console.log('🔍 getCityName: objeto detectado:', Object.keys(city));
+      
+      // Prioridade: name, title, nome, city
+      if (city.name && typeof city.name === 'string') {
+        return city.name.trim();
+      }
+      if (city.title && typeof city.title === 'string') {
+        return city.title.trim();
+      }
+      if (city.nome && typeof city.nome === 'string') {
+        return city.nome.trim();
+      }
+      if (city.city && typeof city.city === 'string') {
+        return city.city.trim();
+      }
+      
+      console.log('⚠️ getCityName: objeto sem propriedade name válida');
+      return 'Cidade';
+    }
+    
+    // Se é número, converte para string
+    if (typeof city === 'number') {
+      return String(city);
+    }
+    
+    // Fallback: converte para string
+    console.log('⚠️ getCityName: convertendo para string:', typeof city);
+    try {
+      return String(city).trim();
+    } catch (error) {
+      console.error('❌ getCityName: erro na conversão:', error);
+      return 'Cidade';
+    }
+  };
+
+  // 🛡️ FUNÇÃO ULTRA SEGURA - Extrair lista de cidades
+  const getCitiesList = (cities) => {
+    console.log('🔍 getCitiesList input:', typeof cities, cities);
+    
+    // Se não é array ou está vazio
+    if (!Array.isArray(cities) || cities.length === 0) {
+      console.log('⚠️ getCitiesList: não é array ou está vazio');
+      return [];
+    }
+    
+    // Mapear cada cidade para nome seguro
+    const safeNames = cities.map((city, index) => {
+      try {
+        const name = getCityName(city);
+        console.log(`✅ getCitiesList[${index}]:`, name);
+        return name || `Cidade ${index + 1}`;
+      } catch (error) {
+        console.error(`❌ getCitiesList[${index}]: erro`, error);
+        return `Cidade ${index + 1}`;
+      }
+    }).filter(name => name && name.length > 0);
+    
+    console.log('✅ getCitiesList resultado:', safeNames);
+    return safeNames;
+  };
+
+  // 🛡️ FUNÇÃO ULTRA SEGURA - Formatar dados da viagem
+  const sanitizeTrip = (trip) => {
+    console.log('🔍 sanitizeTrip input:', trip);
+    
+    if (!trip || typeof trip !== 'object') {
+      console.log('⚠️ sanitizeTrip: entrada inválida');
+      return null;
+    }
+    
+    try {
+      const sanitized = {
+        id: trip.id || `trip-${Date.now()}`,
+        name: (trip.name && typeof trip.name === 'string') ? trip.name.trim() : 'Viagem sem nome',
+        description: (trip.description && typeof trip.description === 'string') ? trip.description.trim() : '',
+        startDate: trip.startDate || new Date().toISOString().split('T')[0],
+        endDate: trip.endDate || new Date().toISOString().split('T')[0],
+        cities: getCitiesList(trip.cities),
+        image: (trip.image && typeof trip.image === 'string') ? trip.image : 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
+      };
+      
+      console.log('✅ sanitizeTrip resultado:', sanitized);
+      return sanitized;
+    } catch (error) {
+      console.error('❌ sanitizeTrip: erro na sanitização:', error);
+      return null;
+    }
+  };
+
   // Carregar viagens do Firebase
   const loadTrips = useCallback(async () => {
     try {
+      console.log('🔄 Carregando viagens...');
       const querySnapshot = await getDocs(collection(db, 'viagens'));
       const loadedTrips = [];
       
-      querySnapshot.forEach((doc) => {
-        loadedTrips.push({ id: doc.id, ...doc.data() });
+      querySnapshot.forEach((docSnapshot) => {
+        try {
+          const tripData = { id: docSnapshot.id, ...docSnapshot.data() };
+          const sanitizedTrip = sanitizeTrip(tripData);
+          
+          if (sanitizedTrip) {
+            loadedTrips.push(sanitizedTrip);
+            console.log('✅ Viagem carregada:', sanitizedTrip.name);
+          } else {
+            console.log('⚠️ Viagem ignorada (dados inválidos):', docSnapshot.id);
+          }
+        } catch (error) {
+          console.error('❌ Erro ao processar viagem:', docSnapshot.id, error);
+        }
       });
       
       if (loadedTrips.length > 0) {
+        console.log(`✅ ${loadedTrips.length} viagens carregadas do Firebase`);
         setTrips(loadedTrips);
       } else {
-        // Se não tem viagens no Firebase, usar exemplos
-        setTrips(defaultTrips);
+        console.log('ℹ️ Nenhuma viagem no Firebase, usando exemplos');
+        // Sanitizar também os exemplos
+        const sanitizedDefaults = defaultTrips.map(sanitizeTrip).filter(Boolean);
+        setTrips(sanitizedDefaults);
       }
     } catch (error) {
-      console.error('Erro ao carregar viagens:', error);
-      setTrips(defaultTrips);
+      console.error('❌ Erro ao carregar viagens:', error);
+      const sanitizedDefaults = defaultTrips.map(sanitizeTrip).filter(Boolean);
+      setTrips(sanitizedDefaults);
     } finally {
       setLoading(false);
     }
@@ -70,7 +194,7 @@ const Dashboard = () => {
 
   // Navegar para visualizar viagem
   const handleTripClick = (tripId) => {
-    if (tripId && !tripId.startsWith('exemplo-')) {
+    if (tripId && !String(tripId).startsWith('exemplo-')) {
       navigate(`/trip/${tripId}`);
     } else {
       alert('Esta é uma viagem de exemplo. Crie uma viagem real para visualizar os detalhes!');
@@ -91,18 +215,18 @@ const Dashboard = () => {
     
     try {
       // Se for uma viagem real (não exemplo), deletar do Firebase
-      if (!deleteModal.trip.id.startsWith('exemplo-')) {
+      if (!String(deleteModal.trip.id).startsWith('exemplo-')) {
         await deleteDoc(doc(db, 'viagens', deleteModal.trip.id));
       }
       
-      // Remover da lista local (tanto exemplos quanto viagens reais)
+      // Remover da lista local
       setTrips(prev => prev.filter(trip => trip.id !== deleteModal.trip.id));
       
       // Fechar modal
       setDeleteModal({ show: false, trip: null });
       
       // Mostrar sucesso
-      const isExample = deleteModal.trip.id.startsWith('exemplo-');
+      const isExample = String(deleteModal.trip.id).startsWith('exemplo-');
       alert(isExample ? '✅ Viagem de exemplo removida!' : '✅ Viagem excluída com sucesso!');
       
     } catch (error) {
@@ -120,36 +244,58 @@ const Dashboard = () => {
 
   // Calcular dias restantes para a viagem
   const calculateDaysUntilTrip = (startDate) => {
-    const today = new Date();
-    const tripStart = new Date(startDate);
-    const diffTime = tripStart - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) {
-      return { text: 'Concluída', color: '#666', bgColor: '#f0f0f0' };
-    } else if (diffDays === 0) {
-      return { text: 'Hoje!', color: '#dc3545', bgColor: '#ffe6e6' };
-    } else if (diffDays === 1) {
-      return { text: 'Amanhã!', color: '#fd7e14', bgColor: '#fff3e0' };
-    } else if (diffDays <= 7) {
-      return { text: `${diffDays} dias`, color: '#fd7e14', bgColor: '#fff3e0' };
-    } else if (diffDays <= 30) {
-      return { text: `${diffDays} dias`, color: '#ffc107', bgColor: '#fffbf0' };
-    } else {
-      return { text: `${diffDays} dias`, color: '#28a745', bgColor: '#f0fff4' };
+    try {
+      const today = new Date();
+      const tripStart = new Date(startDate);
+      const diffTime = tripStart - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays < 0) {
+        return { text: 'Concluída', color: '#666', bgColor: '#f0f0f0' };
+      } else if (diffDays === 0) {
+        return { text: 'Hoje!', color: '#dc3545', bgColor: '#ffe6e6' };
+      } else if (diffDays === 1) {
+        return { text: 'Amanhã!', color: '#fd7e14', bgColor: '#fff3e0' };
+      } else if (diffDays <= 7) {
+        return { text: `${diffDays} dias`, color: '#fd7e14', bgColor: '#fff3e0' };
+      } else if (diffDays <= 30) {
+        return { text: `${diffDays} dias`, color: '#ffc107', bgColor: '#fffbf0' };
+      } else {
+        return { text: `${diffDays} dias`, color: '#28a745', bgColor: '#f0fff4' };
+      }
+    } catch (error) {
+      console.error('Erro ao calcular dias:', error);
+      return { text: 'Data inválida', color: '#666', bgColor: '#f0f0f0' };
     }
   };
 
-  // Filtrar viagens baseado na busca
+  // 🛡️ FILTRAR VIAGENS - ULTRA SEGURO
   const filteredTrips = trips.filter(trip => {
-    const searchLower = searchTerm.toLowerCase();
-    const nameMatch = trip.name.toLowerCase().includes(searchLower);
-    const cityMatch = trip.cities && trip.cities.length > 0 && 
-      trip.cities.some(city => city.toLowerCase().includes(searchLower));
-    const descriptionMatch = trip.description && 
-      trip.description.toLowerCase().includes(searchLower);
+    if (!searchTerm.trim()) return true;
     
-    return nameMatch || cityMatch || descriptionMatch;
+    try {
+      const searchLower = searchTerm.toLowerCase().trim();
+      
+      // Busca no nome da viagem
+      const nameMatch = trip.name && 
+        String(trip.name).toLowerCase().includes(searchLower);
+      
+      // Busca nas cidades (já sanitizadas como strings)
+      const cityMatch = Array.isArray(trip.cities) && trip.cities.length > 0 && 
+        trip.cities.some(cityName => {
+          return cityName && 
+            String(cityName).toLowerCase().includes(searchLower);
+        });
+      
+      // Busca na descrição
+      const descriptionMatch = trip.description && 
+        String(trip.description).toLowerCase().includes(searchLower);
+      
+      return nameMatch || cityMatch || descriptionMatch;
+    } catch (error) {
+      console.error('Erro no filtro:', error);
+      return false;
+    }
   });
 
   if (loading) {
@@ -235,7 +381,7 @@ const Dashboard = () => {
                 color: '#2C3639',
                 margin: '0'
               }}>
-                "{deleteModal.trip?.name}"?
+                "{deleteModal.trip?.name || 'Esta viagem'}"?
               </p>
             </div>
 
@@ -252,7 +398,7 @@ const Dashboard = () => {
                 margin: '0',
                 textAlign: 'center'
               }}>
-                ⚠️ {deleteModal.trip?.id.startsWith('exemplo-') 
+                ⚠️ {String(deleteModal.trip?.id || '').startsWith('exemplo-') 
                   ? 'Esta viagem de exemplo será removida da lista.'
                   : 'Esta ação não pode ser desfeita. Todos os dados da viagem serão perdidos permanentemente.'
                 }
@@ -595,11 +741,11 @@ const Dashboard = () => {
           }}>
             {filteredTrips.map((trip, index) => {
               const daysInfo = calculateDaysUntilTrip(trip.startDate);
-              const isExample = trip.id.startsWith('exemplo-');
+              const isExample = String(trip.id).startsWith('exemplo-');
               
               return (
                 <div 
-                  key={trip.id || index} 
+                  key={trip.id || `trip-${index}`} 
                   style={{
                     backgroundColor: 'white',
                     borderRadius: '20px',
@@ -661,7 +807,7 @@ const Dashboard = () => {
                       </div>
                     )}
 
-                    {/* Botão de Excluir - Para todas as viagens */}
+                    {/* Botão de Excluir */}
                     <button
                       onClick={(e) => handleDeleteClick(e, trip)}
                       style={{
@@ -704,7 +850,7 @@ const Dashboard = () => {
                       fontFamily: 'Cormorant Garamond, serif',
                       color: '#2C3639'
                     }}>
-                      {trip.name}
+                      {String(trip.name)}
                     </h3>
                     
                     <div style={{
@@ -717,15 +863,16 @@ const Dashboard = () => {
                       📅 {new Date(trip.startDate).toLocaleDateString('pt-BR')} - {new Date(trip.endDate).toLocaleDateString('pt-BR')}
                     </div>
                     
-                    {trip.cities && trip.cities.length > 0 && (
+                    {/* 🛡️ RENDERIZAÇÃO ULTRA SEGURA DAS CIDADES */}
+                    {Array.isArray(trip.cities) && trip.cities.length > 0 && (
                       <div style={{
                         display: 'flex',
                         flexWrap: 'wrap',
                         gap: '0.5rem',
                         marginBottom: '1rem'
                       }}>
-                        {trip.cities.slice(0, 3).map((city, cityIndex) => (
-                          <span key={cityIndex} style={{
+                        {trip.cities.slice(0, 3).map((cityName, cityIndex) => (
+                          <span key={`city-${cityIndex}`} style={{
                             backgroundColor: '#e8f4f3',
                             color: '#7C9A92',
                             padding: '4px 10px',
@@ -733,7 +880,7 @@ const Dashboard = () => {
                             fontSize: '0.8rem',
                             fontWeight: '500'
                           }}>
-                            📍 {city}
+                            📍 {String(cityName)}
                           </span>
                         ))}
                         {trip.cities.length > 3 && (
@@ -761,7 +908,7 @@ const Dashboard = () => {
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical'
                       }}>
-                        {trip.description}
+                        {String(trip.description)}
                       </p>
                     )}
                   </div>
