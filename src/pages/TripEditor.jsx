@@ -1,5 +1,5 @@
 // src/pages/TripEditor.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, addDoc, updateDoc, collection } from 'firebase/firestore';
 import { db } from '../services/firebase';
@@ -23,14 +23,8 @@ const TripEditor = () => {
   const [loading, setLoading] = useState(false);
   const [loadingTrip, setLoadingTrip] = useState(isEditing);
 
-  // Carregar dados da viagem se estiver editando
-  useEffect(() => {
-    if (isEditing && id) {
-      loadTripData();
-    }
-  }, [id, isEditing]);
-
-  const loadTripData = async () => {
+  // Carregar dados da viagem - usar useCallback para evitar warning de dependência
+  const loadTripData = useCallback(async () => {
     try {
       const tripDoc = doc(db, 'viagens', id);
       const tripSnapshot = await getDoc(tripDoc);
@@ -56,7 +50,14 @@ const TripEditor = () => {
     } finally {
       setLoadingTrip(false);
     }
-  };
+  }, [id, navigate]);
+
+  // Carregar dados da viagem se estiver editando
+  useEffect(() => {
+    if (isEditing && id) {
+      loadTripData();
+    }
+  }, [isEditing, id, loadTripData]);
 
   // Função para calcular duração
   const calculateDuration = () => {

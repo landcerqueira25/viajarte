@@ -18,6 +18,14 @@ const Home = () => {
     }
   };
 
+  const handleContactClick = () => {
+    alert('Entre em contato: contato@viajarte.com');
+  };
+
+  const handlePrivacyClick = () => {
+    alert('Política de Privacidade: Em breve disponível');
+  };
+
   return (
     <div style={{ 
       minHeight: '100vh', 
@@ -431,12 +439,32 @@ const Home = () => {
           >
             Configurações
           </button>
-          <a href="#" style={{ color: 'white', textDecoration: 'none', opacity: '0.7' }}>
+          <button 
+            onClick={handleContactClick}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'white', 
+              textDecoration: 'none', 
+              opacity: '0.7',
+              cursor: 'pointer'
+            }}
+          >
             Contato
-          </a>
-          <a href="#" style={{ color: 'white', textDecoration: 'none', opacity: '0.7' }}>
+          </button>
+          <button 
+            onClick={handlePrivacyClick}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'white', 
+              textDecoration: 'none', 
+              opacity: '0.7',
+              cursor: 'pointer'
+            }}
+          >
             Privacidade
-          </a>
+          </button>
         </div>
         
         <p style={{

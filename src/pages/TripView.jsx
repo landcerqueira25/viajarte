@@ -1,6 +1,4 @@
 // src/pages/TripView.jsx
-// VERSÃO COMPLETA COM REACT ROUTER
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
@@ -12,7 +10,6 @@ const TripView = () => {
   const [trip, setTrip] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  const [selectedCity, setSelectedCity] = useState(null);
 
   // Carregar dados da viagem
   useEffect(() => {
@@ -24,11 +21,6 @@ const TripView = () => {
         if (tripSnapshot.exists()) {
           const tripData = { id: tripSnapshot.id, ...tripSnapshot.data() };
           setTrip(tripData);
-          
-          // Selecionar primeira cidade por padrão
-          if (tripData.cities && tripData.cities.length > 0) {
-            setSelectedCity(tripData.cities[0]);
-          }
         } else {
           console.error('Viagem não encontrada');
           navigate('/dashboard');
