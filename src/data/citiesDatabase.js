@@ -1,5 +1,5 @@
 // src/data/citiesDatabase.js
-// BASE DE DADOS DE CIDADES - SEM IA, SISTEMA LOCAL
+// BASE DE DADOS DE CIDADES - VERSÃO CORRIGIDA PARA EVITAR ERROS
 
 export const citiesDatabase = {
   // 🇫🇷 FRANÇA
@@ -136,50 +136,94 @@ export const citiesDatabase = {
   }
 };
 
-// 🔍 FUNÇÕES DE BUSCA E FILTRO
+// 🔍 FUNÇÕES DE BUSCA E FILTRO - VERSÃO SEGURA
 export const cityHelpers = {
   // Buscar cidade por ID
   getCityById: (cityId) => {
-    return citiesDatabase[cityId.toLowerCase()] || null;
+    const city = citiesDatabase[cityId?.toLowerCase()];
+    if (!city) return null;
+    
+    // Garantir que todos os arrays existem
+    return {
+      ...city,
+      highlights: city.highlights || [],
+      tags: city.tags || [],
+      bestMonths: city.bestMonths || [],
+      activities: city.activities || []
+    };
   },
 
   // Buscar cidades por país
   getCitiesByCountry: (country) => {
+    if (!country) return [];
+    
     return Object.values(citiesDatabase).filter(city => 
-      city.country.toLowerCase().includes(country.toLowerCase())
-    );
+      city.country && city.country.toLowerCase().includes(country.toLowerCase())
+    ).map(city => ({
+      ...city,
+      highlights: city.highlights || [],
+      tags: city.tags || [],
+      bestMonths: city.bestMonths || [],
+      activities: city.activities || []
+    }));
   },
 
   // Buscar cidades por nome (busca parcial)
   searchCities: (searchTerm) => {
     if (!searchTerm || searchTerm.length < 2) {
-      return Object.values(citiesDatabase);
+      return cityHelpers.getAllCities();
     }
     
     const term = searchTerm.toLowerCase();
     return Object.values(citiesDatabase).filter(city =>
-      city.name.toLowerCase().includes(term) ||
-      city.country.toLowerCase().includes(term) ||
-      city.tags.some(tag => tag.toLowerCase().includes(term))
-    );
+      (city.name && city.name.toLowerCase().includes(term)) ||
+      (city.country && city.country.toLowerCase().includes(term)) ||
+      (city.tags && Array.isArray(city.tags) && city.tags.some(tag => 
+        tag && tag.toLowerCase().includes(term)
+      ))
+    ).map(city => ({
+      ...city,
+      highlights: city.highlights || [],
+      tags: city.tags || [],
+      bestMonths: city.bestMonths || [],
+      activities: city.activities || []
+    }));
   },
 
   // Obter todas as cidades
   getAllCities: () => {
-    return Object.values(citiesDatabase);
+    return Object.values(citiesDatabase).map(city => ({
+      ...city,
+      highlights: city.highlights || [],
+      tags: city.tags || [],
+      bestMonths: city.bestMonths || [],
+      activities: city.activities || []
+    }));
   },
 
   // Obter países únicos
   getCountries: () => {
-    const countries = [...new Set(Object.values(citiesDatabase).map(city => city.country))];
+    const countries = [...new Set(Object.values(citiesDatabase)
+      .map(city => city.country)
+      .filter(Boolean)
+    )];
     return countries.sort();
   },
 
   // Obter cidades por tags
   getCitiesByTag: (tag) => {
+    if (!tag) return [];
+    
     return Object.values(citiesDatabase).filter(city =>
+      city.tags && Array.isArray(city.tags) && 
       city.tags.includes(tag.toLowerCase())
-    );
+    ).map(city => ({
+      ...city,
+      highlights: city.highlights || [],
+      tags: city.tags || [],
+      bestMonths: city.bestMonths || [],
+      activities: city.activities || []
+    }));
   },
 
   // Calcular distância aproximada entre duas cidades (fórmula simplificada)
@@ -187,7 +231,7 @@ export const cityHelpers = {
     const city1 = citiesDatabase[city1Id];
     const city2 = citiesDatabase[city2Id];
     
-    if (!city1 || !city2) return 0;
+    if (!city1 || !city2 || !city1.coordinates || !city2.coordinates) return 0;
     
     const lat1 = city1.coordinates.lat * Math.PI / 180;
     const lat2 = city2.coordinates.lat * Math.PI / 180;
@@ -212,6 +256,10 @@ export const cityHelpers = {
       .filter(city => city.id !== currentCityId)
       .map(city => ({
         ...city,
+        highlights: city.highlights || [],
+        tags: city.tags || [],
+        bestMonths: city.bestMonths || [],
+        activities: city.activities || [],
         distance: cityHelpers.calculateDistance(currentCityId, city.id)
       }))
       .filter(city => city.distance <= maxDistance)
@@ -222,29 +270,30 @@ export const cityHelpers = {
   // Gerar descrição de clima baseado no mês
   getWeatherInfo: (cityId, month) => {
     const city = citiesDatabase[cityId];
-    if (!city) return "Consulte a previsão local";
+    if (!city || !city.averageTemp) return "Consulte a previsão local";
     
     let season, temp, description;
     
     if ([3, 4, 5].includes(month)) {
       season = "Primavera";
-      temp = city.averageTemp.spring;
+      temp = city.averageTemp.spring || "15-20°C";
       description = "clima ameno e agradável";
     } else if ([6, 7, 8].includes(month)) {
       season = "Verão";
-      temp = city.averageTemp.summer;
+      temp = city.averageTemp.summer || "20-25°C";
       description = "dias mais longos e ensolarados";
     } else if ([9, 10, 11].includes(month)) {
       season = "Outono";
-      temp = city.averageTemp.autumn;
+      temp = city.averageTemp.autumn || "15-20°C";
       description = "clima fresco e paisagens coloridas";
     } else {
       season = "Inverno";
-      temp = city.averageTemp.winter;
+      temp = city.averageTemp.winter || "5-15°C";
       description = "clima frio, possível neve";
     }
     
-    const isRecommended = city.bestMonths.includes(month);
+    const isRecommended = city.bestMonths && Array.isArray(city.bestMonths) && 
+                         city.bestMonths.includes(month);
     const recommendation = isRecommended ? 
       "Excelente época para visitar!" : 
       "Boa época, mas verifique as condições climáticas.";

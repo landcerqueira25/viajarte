@@ -249,7 +249,7 @@ const EnhancedTripEditor = () => {
       const countries = [...new Set(tripData.cities.map(city => city.country))];
       const countryText = countries.length === 1 ? countries[0] : `${countries.length} países`;
 
-      const description = `Embarque numa jornada inesquecível de ${duration} dias explorando ${cityNames}. Esta viagem por ${countryText} combina história, cultura e paisagens deslumbrantes. Cada destino oferece experiências únicas: desde ${tripData.cities[0]?.highlights?.[0] || 'atrações históricas'} até ${tripData.cities[tripData.cities.length - 1]?.highlights?.[0] || 'pontos turísticos icônicos'}. Uma aventura que criará memórias para toda a vida!`;
+      const description = `Embarque numa jornada inesquecível de ${duration} dias explorando ${cityNames}. Esta viagem por ${countryText} combina história, cultura e paisagens deslumbrantes. Cada destino oferece experiências únicas: desde ${(tripData.cities[0]?.highlights && tripData.cities[0].highlights.length > 0) ? tripData.cities[0].highlights[0] : 'atrações históricas'} até ${(tripData.cities[tripData.cities.length - 1]?.highlights && tripData.cities[tripData.cities.length - 1].highlights.length > 0) ? tripData.cities[tripData.cities.length - 1].highlights[0] : 'pontos turísticos icônicos'}. Uma aventura que criará memórias para toda a vida!`;
 
       setTripData(prev => ({
         ...prev,
@@ -975,7 +975,7 @@ const EnhancedTripEditor = () => {
                                 flexWrap: 'wrap',
                                 marginBottom: '0.5rem'
                               }}>
-                                {city.tags.slice(0, 3).map((tag) => (
+                                {(city.tags || []).slice(0, 3).map((tag) => (
                                   <span
                                     key={tag}
                                     style={{
@@ -1093,7 +1093,7 @@ const EnhancedTripEditor = () => {
                             flexWrap: 'wrap',
                             gap: '0.5rem'
                           }}>
-                            {city.highlights.slice(0, 5).map((highlight, idx) => (
+                            {(city.highlights || []).slice(0, 5).map((highlight, idx) => (
                               <span
                                 key={idx}
                                 style={{
@@ -1527,7 +1527,7 @@ const EnhancedTripEditor = () => {
                                   gap: '0.5rem',
                                   flexWrap: 'wrap'
                                 }}>
-                                  {city.highlights.slice(0, 3).map((highlight, idx) => (
+                                  {(city.highlights || []).slice(0, 3).map((highlight, idx) => (
                                     <span
                                       key={idx}
                                       style={{
