@@ -1,4 +1,4 @@
-// src/App.js - VERSÃO CORRIGIDA PARA RESOLVER 404 NO DASHBOARD
+// src/App.js - VERSÃO ATUALIZADA USANDO BASE LOCAL
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
@@ -6,7 +6,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Home from './pages/Home.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import TripView from './pages/TripView.jsx';
-import TripEditor from './pages/EnhancedTripEditor';
+import TripEditor from './pages/EnhancedTripEditor'; // Usar o editor com base local
 import Settings from './pages/Settings.jsx';
 
 // Importar estilos
@@ -208,7 +208,7 @@ const SafeComponent = ({ Component, fallbackName }) => {
 };
 
 function App() {
-  console.log('🚀 Viajarte iniciando...', {
+  console.log('🚀 Viajarte iniciando com Base Local...', {
     url: window.location.href,
     pathname: window.location.pathname,
     timestamp: new Date().toLocaleTimeString()

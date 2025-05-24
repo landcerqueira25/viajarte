@@ -1,13 +1,13 @@
 // src/pages/EnhancedTripEditor.jsx
-// EDITOR AVANÇADO COM IA, PERÍODOS POR CIDADE E VIAJANTES
+// EDITOR AVANÇADO COM BASE DE DADOS LOCAL (SEM IA)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, addDoc, updateDoc, collection } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
-// Importar serviço real de IA
-import { aiService } from '../services/aiService';
+// Importar base de dados local
+import { citiesDatabase, cityHelpers, travelThemes } from '../data/citiesDatabase';
 
 const EnhancedTripEditor = () => {
   const { id } = useParams();
@@ -30,14 +30,17 @@ const EnhancedTripEditor = () => {
   const [loadingTrip, setLoadingTrip] = useState(isEditing);
   const [activeTab, setActiveTab] = useState('basic');
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
-  const [apiStatus, setApiStatus] = useState({ openweather: null, gemini: null });
   
   // Estados para adicionar cidades
-  const [newCity, setNewCity] = useState('');
-  const [loadingCityInfo, setLoadingCityInfo] = useState(false);
+  const [citySearch, setCitySearch] = useState('');
+  const [filteredCities, setFilteredCities] = useState([]);
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
   
   // Estados para adicionar viajantes
   const [newTraveler, setNewTraveler] = useState({ name: '', email: '' });
+
+  // Estados para temas pré-definidos
+  const [selectedTheme, setSelectedTheme] = useState('');
 
   // Carregar dados da viagem se estiver editando
   const loadTripData = useCallback(async () => {
@@ -73,65 +76,114 @@ const EnhancedTripEditor = () => {
     if (isEditing && id) {
       loadTripData();
     }
-    
-    // Testar conexão das APIs ao carregar
-    testApiConnections();
   }, [isEditing, id, loadTripData]);
 
-  // Testar conexão das APIs
-  const testApiConnections = async () => {
-    try {
-      const { debugAI } = await import('../services/aiService');
-      const results = await debugAI.testConnection();
-      setApiStatus(results);
-    } catch (error) {
-      console.error('Erro ao testar APIs:', error);
-      setApiStatus({ openweather: false, gemini: false });
+  // Filtrar cidades quando busca muda
+  useEffect(() => {
+    if (citySearch.length >= 2) {
+      const filtered = cityHelpers.searchCities(citySearch);
+      setFilteredCities(filtered);
+      setShowCityDropdown(true);
+    } else {
+      setFilteredCities(cityHelpers.getAllCities());
+      setShowCityDropdown(false);
     }
+  }, [citySearch]);
+
+  // Função para adicionar cidade da base de dados
+  const handleAddCity = (cityData) => {
+    // Verificar se a cidade já foi adicionada
+    const cityExists = tripData.cities.some(city => city.id === cityData.id);
+    
+    if (cityExists) {
+      alert(`${cityData.name} já foi adicionada ao roteiro!`);
+      return;
+    }
+
+    // Calcular datas automáticas
+    const totalDays = tripData.startDate && tripData.endDate 
+      ? Math.ceil((new Date(tripData.endDate) - new Date(tripData.startDate)) / (1000 * 60 * 60 * 24)) + 1
+      : 3;
+    
+    const daysPerCity = Math.max(1, Math.floor(totalDays / (tripData.cities.length + 1)));
+    
+    let startDate = tripData.startDate;
+    if (tripData.cities.length > 0) {
+      const lastCity = tripData.cities[tripData.cities.length - 1];
+      const lastEndDate = new Date(lastCity.endDate || tripData.startDate);
+      startDate = new Date(lastEndDate.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    }
+    
+    const endDate = new Date(new Date(startDate).getTime() + (daysPerCity - 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    // Gerar informação climática
+    const startMonth = new Date(startDate).getMonth() + 1;
+    const weatherInfo = cityHelpers.getWeatherInfo(cityData.id, startMonth);
+
+    // Criar objeto cidade para a viagem
+    const tripCity = {
+      ...cityData,
+      startDate: startDate,
+      endDate: endDate,
+      weatherInfo: weatherInfo,
+      userNotes: '',
+      activities: []
+    };
+
+    setTripData(prev => ({
+      ...prev,
+      cities: [...prev.cities, tripCity]
+    }));
+    
+    // Limpar busca
+    setCitySearch('');
+    setShowCityDropdown(false);
+    
+    alert(`✅ ${cityData.name} adicionada ao roteiro!`);
   };
 
-  // Função para adicionar cidade com IA REAL
-  const handleAddCity = async () => {
-    if (!newCity.trim()) return;
+  // Função para aplicar tema pré-definido
+  const handleApplyTheme = (themeId) => {
+    const theme = travelThemes[themeId];
+    if (!theme) return;
+
+    const themeCities = theme.cities.map(cityId => {
+      const cityData = cityHelpers.getCityById(cityId);
+      return cityData;
+    }).filter(Boolean);
+
+    // Calcular datas automáticas
+    const totalDays = tripData.startDate && tripData.endDate 
+      ? Math.ceil((new Date(tripData.endDate) - new Date(tripData.startDate)) / (1000 * 60 * 60 * 1000)) + 1
+      : 14;
     
-    setLoadingCityInfo(true);
+    const daysPerCity = Math.max(2, Math.floor(totalDays / themeCities.length));
     
-    try {
-      // Calcular período padrão para a cidade
-      const totalDays = tripData.startDate && tripData.endDate 
-        ? Math.ceil((new Date(tripData.endDate) - new Date(tripData.startDate)) / (1000 * 60 * 60 * 24)) + 1
-        : 3;
+    const tripCities = themeCities.map((cityData, index) => {
+      const startDate = new Date(new Date(tripData.startDate).getTime() + (index * daysPerCity * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+      const endDate = new Date(new Date(startDate).getTime() + ((daysPerCity - 1) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
       
-      const daysPerCity = Math.max(1, Math.floor(totalDays / (tripData.cities.length + 1)));
-      
-      let startDate = tripData.startDate;
-      if (tripData.cities.length > 0) {
-        const lastCity = tripData.cities[tripData.cities.length - 1];
-        const lastEndDate = new Date(lastCity.endDate || tripData.startDate);
-        startDate = new Date(lastEndDate.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      }
-      
-      const endDate = new Date(new Date(startDate).getTime() + (daysPerCity - 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      
-      // Usar IA REAL para buscar informações da cidade
-      const cityData = await aiService.createCityWithAI(newCity.trim(), startDate, endDate);
-      
-      setTripData(prev => ({
-        ...prev,
-        cities: [...prev.cities, cityData]
-      }));
-      
-      setNewCity('');
-      
-      // Mostrar sucesso
-      alert(`✅ Cidade "${cityData.name}, ${cityData.country}" adicionada com informações da IA!`);
-      
-    } catch (error) {
-      console.error('Erro ao buscar informações da cidade:', error);
-      alert(`❌ ${error.message}\n\nTente com um nome de cidade mais específico.`);
-    } finally {
-      setLoadingCityInfo(false);
-    }
+      const startMonth = new Date(startDate).getMonth() + 1;
+      const weatherInfo = cityHelpers.getWeatherInfo(cityData.id, startMonth);
+
+      return {
+        ...cityData,
+        startDate: startDate,
+        endDate: endDate,
+        weatherInfo: weatherInfo,
+        userNotes: '',
+        activities: []
+      };
+    });
+
+    setTripData(prev => ({
+      ...prev,
+      name: prev.name || theme.name,
+      description: prev.description || theme.description,
+      cities: tripCities
+    }));
+
+    alert(`✅ Tema "${theme.name}" aplicado! ${themeCities.length} cidades adicionadas.`);
   };
 
   // Função para remover cidade
@@ -179,52 +231,34 @@ const EnhancedTripEditor = () => {
     }));
   };
 
-  // Função para gerar descrição com IA REAL
-  const handleGenerateDescription = async () => {
+  // Função para gerar descrição automática (sem IA)
+  const handleGenerateDescription = () => {
     if (tripData.cities.length === 0) {
-      alert('Adicione pelo menos uma cidade para gerar a descrição com IA');
+      alert('Adicione pelo menos uma cidade para gerar a descrição');
       return;
     }
-    
-    if (!tripData.startDate || !tripData.endDate) {
-      alert('Defina as datas da viagem para gerar uma descrição mais precisa');
-      return;
-    }
-    
+
     setIsGeneratingDescription(true);
-    
-    try {
-      const description = await aiService.generateTripDescription(
-        tripData.cities, 
-        tripData.startDate, 
-        tripData.endDate,
-        tripData.travelers
-      );
-      
+
+    setTimeout(() => {
+      const duration = tripData.startDate && tripData.endDate 
+        ? Math.ceil((new Date(tripData.endDate) - new Date(tripData.startDate)) / (1000 * 60 * 60 * 1000)) + 1
+        : tripData.cities.length * 3;
+
+      const cityNames = tripData.cities.map(city => city.name).join(", ");
+      const countries = [...new Set(tripData.cities.map(city => city.country))];
+      const countryText = countries.length === 1 ? countries[0] : `${countries.length} países`;
+
+      const description = `Embarque numa jornada inesquecível de ${duration} dias explorando ${cityNames}. Esta viagem por ${countryText} combina história, cultura e paisagens deslumbrantes. Cada destino oferece experiências únicas: desde ${tripData.cities[0]?.highlights?.[0] || 'atrações históricas'} até ${tripData.cities[tripData.cities.length - 1]?.highlights?.[0] || 'pontos turísticos icônicos'}. Uma aventura que criará memórias para toda a vida!`;
+
       setTripData(prev => ({
         ...prev,
         description: description
       }));
-      
-      alert('✅ Descrição gerada com sucesso pela IA!');
-      
-    } catch (error) {
-      console.error('Erro ao gerar descrição:', error);
-      alert(`❌ ${error.message}\n\nUsando descrição básica como alternativa.`);
-      
-      // Fallback para descrição básica
-      const duration = Math.ceil((new Date(tripData.endDate) - new Date(tripData.startDate)) / (1000 * 60 * 60 * 24)) + 1;
-      const cityNames = tripData.cities.map(city => city.name).join(", ");
-      
-      const fallbackDescription = `Embarque numa jornada inesquecível de ${duration} dias explorando ${cityNames}. Esta viagem oferece uma experiência única combinando história, cultura e aventura.`;
-      
-      setTripData(prev => ({
-        ...prev,
-        description: fallbackDescription
-      }));
-    } finally {
+
       setIsGeneratingDescription(false);
-    }
+      alert('✅ Descrição gerada automaticamente!');
+    }, 1500);
   };
 
   // Função para salvar viagem
@@ -260,7 +294,7 @@ const EnhancedTripEditor = () => {
         endDate: tripData.endDate,
         cities: tripData.cities,
         travelers: tripData.travelers.filter(t => t.name.trim()),
-        image: tripData.image || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
+        image: tripData.image || tripData.cities[0]?.imageUrl || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
         updatedAt: new Date(),
         ...(isEditing ? {} : { createdAt: new Date() })
       };
@@ -304,70 +338,6 @@ const EnhancedTripEditor = () => {
           }}></div>
           <p style={{ color: '#666', fontSize: '1.1rem' }}>Carregando viagem...</p>
         </div>
-
-      {/* Status das APIs */}
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '0 2rem',
-        marginBottom: '1rem'
-      }}>
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '10px',
-          padding: '1rem',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '2rem',
-          flexWrap: 'wrap'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>🤖</span>
-            <span style={{ fontWeight: '600' }}>Status da IA:</span>
-          </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{
-              fontSize: '1rem',
-              color: apiStatus.openweather === null ? '#666' : apiStatus.openweather ? '#22c55e' : '#dc3545'
-            }}>
-              {apiStatus.openweather === null ? '🔄' : apiStatus.openweather ? '✅' : '❌'}
-            </span>
-            <span style={{ fontSize: '0.9rem' }}>
-              OpenWeather {apiStatus.openweather === null ? 'Testando...' : apiStatus.openweather ? 'Conectado' : 'Falhou'}
-            </span>
-          </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{
-              fontSize: '1rem',
-              color: apiStatus.gemini === null ? '#666' : apiStatus.gemini ? '#22c55e' : '#dc3545'
-            }}>
-              {apiStatus.gemini === null ? '🔄' : apiStatus.gemini ? '✅' : '❌'}
-            </span>
-            <span style={{ fontSize: '0.9rem' }}>
-              Gemini {apiStatus.gemini === null ? 'Testando...' : apiStatus.gemini ? 'Conectado' : 'Falhou'}
-            </span>
-          </div>
-          
-          <button
-            onClick={testApiConnections}
-            style={{
-              backgroundColor: '#7C9A92',
-              color: 'white',
-              border: 'none',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              marginLeft: 'auto'
-            }}
-          >
-            🔄 Testar Novamente
-          </button>
-        </div>
-      </div>
       </div>
     );
   }
@@ -460,6 +430,25 @@ const EnhancedTripEditor = () => {
         margin: '0 auto',
         padding: '0 2rem 4rem'
       }}>
+        {/* Status da Base de Dados */}
+        <div style={{
+          backgroundColor: '#e8f5e8',
+          borderRadius: '10px',
+          padding: '1rem',
+          marginBottom: '2rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem'
+        }}>
+          <span style={{ fontSize: '1.5rem' }}>🗂️</span>
+          <div>
+            <strong>Base de Dados Local Ativa</strong>
+            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: '#666' }}>
+              Temos {cityHelpers.getAllCities().length} cidades disponíveis nos temas: Europa Clássica, Capitais Imperiais, Rota Romântica e Arte & Museus.
+            </p>
+          </div>
+        </div>
+
         {/* Navegação por Tabs */}
         <div style={{
           backgroundColor: 'white',
@@ -473,10 +462,10 @@ const EnhancedTripEditor = () => {
             borderBottom: '1px solid #e0e0e0'
           }}>
             {[
-              { id: 'basic', label: '📋 Informações Básicas', icon: '📋' },
-              { id: 'cities', label: '🏙️ Cidades & IA', icon: '🏙️' },
-              { id: 'travelers', label: '👥 Viajantes', icon: '👥' },
-              { id: 'preview', label: '👁️ Preview', icon: '👁️' }
+              { id: 'basic', label: '📋 Informações Básicas' },
+              { id: 'cities', label: '🏙️ Cidades' },
+              { id: 'travelers', label: '👥 Viajantes' },
+              { id: 'preview', label: '👁️ Preview' }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -604,7 +593,7 @@ const EnhancedTripEditor = () => {
                       </div>
                     </div>
 
-                    {/* Descrição com IA */}
+                    {/* Descrição */}
                     <div style={{ marginBottom: '2rem' }}>
                       <div style={{
                         display: 'flex',
@@ -622,7 +611,7 @@ const EnhancedTripEditor = () => {
                         
                         <button
                           onClick={handleGenerateDescription}
-                          disabled={isGeneratingDescription || tripData.cities.length === 0 || !apiStatus.gemini}
+                          disabled={isGeneratingDescription || tripData.cities.length === 0}
                           style={{
                             backgroundColor: '#D9A6A0',
                             color: 'white',
@@ -630,18 +619,18 @@ const EnhancedTripEditor = () => {
                             padding: '8px 16px',
                             borderRadius: '6px',
                             fontSize: '0.9rem',
-                            cursor: isGeneratingDescription || tripData.cities.length === 0 || !apiStatus.gemini ? 'not-allowed' : 'pointer',
-                            opacity: isGeneratingDescription || tripData.cities.length === 0 || !apiStatus.gemini ? 0.6 : 1
+                            cursor: isGeneratingDescription || tripData.cities.length === 0 ? 'not-allowed' : 'pointer',
+                            opacity: isGeneratingDescription || tripData.cities.length === 0 ? 0.6 : 1
                           }}
                         >
-                          {isGeneratingDescription ? '🤖 Gerando...' : '✨ Gerar com IA Gemini'}
+                          {isGeneratingDescription ? '⏳ Gerando...' : '✨ Gerar Descrição'}
                         </button>
                       </div>
                       
                       <textarea
                         value={tripData.description}
                         onChange={(e) => setTripData(prev => ({ ...prev, description: e.target.value }))}
-                        placeholder="Descreva sua viagem ou clique em 'Gerar com IA Gemini' após adicionar cidades para uma descrição personalizada..."
+                        placeholder="Descreva sua viagem ou clique em 'Gerar Descrição' após adicionar cidades..."
                         rows={4}
                         style={{
                           width: '100%',
@@ -665,7 +654,7 @@ const EnhancedTripEditor = () => {
                         color: '#2C3639',
                         marginBottom: '0.5rem'
                       }}>
-                        URL da Imagem de Capa
+                        URL da Imagem de Capa (opcional)
                       </label>
                       <input
                         type="url"
@@ -681,6 +670,13 @@ const EnhancedTripEditor = () => {
                           outline: 'none'
                         }}
                       />
+                      <p style={{
+                        fontSize: '0.8rem',
+                        color: '#666',
+                        margin: '0.5rem 0 0 0'
+                      }}>
+                        💡 Se não informar, usaremos a imagem da primeira cidade
+                      </p>
                     </div>
                   </div>
 
@@ -699,8 +695,8 @@ const EnhancedTripEditor = () => {
                       📊 Resumo
                     </h4>
                     
-                    <div style={{
-                      display: 'flex',
+                    <div style={{ 
+                      display: 'flex', 
                       flexDirection: 'column',
                       gap: '0.8rem',
                       fontSize: '0.9rem'
@@ -734,7 +730,7 @@ const EnhancedTripEditor = () => {
               </div>
             )}
 
-            {/* Tab: Cidades com IA */}
+            {/* Tab: Cidades */}
             {activeTab === 'cities' && (
               <div>
                 <h2 style={{
@@ -746,9 +742,9 @@ const EnhancedTripEditor = () => {
                   🏙️ Cidades do Roteiro
                 </h2>
 
-                {/* Adicionar nova cidade */}
+                {/* Temas Pré-definidos */}
                 <div style={{
-                  backgroundColor: '#f8f9fa',
+                  backgroundColor: '#e8f4f3',
                   padding: '1.5rem',
                   borderRadius: '10px',
                   marginBottom: '2rem'
@@ -758,63 +754,156 @@ const EnhancedTripEditor = () => {
                     color: '#2C3639',
                     marginBottom: '1rem'
                   }}>
-                    ➕ Adicionar Cidade
+                    🎨 Temas Pré-definidos
                   </h4>
                   
                   <div style={{
-                    display: 'flex',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                     gap: '1rem',
-                    alignItems: 'flex-end'
+                    marginBottom: '1rem'
                   }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={{
-                        display: 'block',
-                        fontSize: '0.9rem',
-                        fontWeight: '600',
-                        color: '#2C3639',
-                        marginBottom: '0.5rem'
-                      }}>
-                        Nome da Cidade
-                      </label>
-                      <input
-                        type="text"
-                        value={newCity}
-                        onChange={(e) => setNewCity(e.target.value)}
-                        placeholder="Ex: Paris, Roma, Londres..."
+                    {Object.entries(travelThemes).map(([themeId, theme]) => (
+                      <button
+                        key={themeId}
+                        onClick={() => handleApplyTheme(themeId)}
                         style={{
-                          width: '100%',
-                          padding: '12px',
-                          border: '2px solid #e0e0e0',
+                          backgroundColor: 'white',
+                          border: '2px solid #7C9A92',
                           borderRadius: '8px',
-                          fontSize: '1rem',
-                          outline: 'none'
+                          padding: '1rem',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.3s ease'
                         }}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleAddCity();
-                          }
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor = '#7C9A92';
+                          e.currentTarget.style.color = 'white';
                         }}
-                      />
-                    </div>
-                    
-                    <button
-                      onClick={handleAddCity}
-                      disabled={loadingCityInfo || !newCity.trim() || !apiStatus.openweather}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor = 'white';
+                          e.currentTarget.style.color = 'inherit';
+                        }}
+                      >
+                        <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                          {theme.name}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+                          {theme.cities.length} cidades • {theme.duration}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <p style={{
+                    fontSize: '0.8rem',
+                    color: '#666',
+                    margin: '0'
+                  }}>
+                    💡 Clique em um tema para adicionar as cidades automaticamente
+                  </p>
+                </div>
+
+                {/* Buscar e Adicionar Cidades */}
+                <div style={{
+                  backgroundColor: '#f8f9fa',
+                  padding: '1.5rem',
+                  borderRadius: '10px',
+                  marginBottom: '2rem',
+                  position: 'relative'
+                }}>
+                  <h4 style={{
+                    fontSize: '1.2rem',
+                    color: '#2C3639',
+                    marginBottom: '1rem'
+                  }}>
+                    🔍 Buscar Cidades
+                  </h4>
+                  
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      value={citySearch}
+                      onChange={(e) => setCitySearch(e.target.value)}
+                      onFocus={() => setShowCityDropdown(true)}
+                      placeholder="Digite o nome da cidade..."
                       style={{
-                        backgroundColor: '#7C9A92',
-                        color: 'white',
-                        border: 'none',
-                        padding: '12px 20px',
+                        width: '100%',
+                        padding: '12px',
+                        border: '2px solid #e0e0e0',
                         borderRadius: '8px',
                         fontSize: '1rem',
-                        cursor: loadingCityInfo || !newCity.trim() || !apiStatus.openweather ? 'not-allowed' : 'pointer',
-                        opacity: loadingCityInfo || !newCity.trim() || !apiStatus.openweather ? 0.6 : 1,
-                        whiteSpace: 'nowrap'
+                        outline: 'none'
                       }}
-                    >
-                      {loadingCityInfo ? '🤖 Buscando IA...' : '+ Adicionar com IA'}
-                    </button>
+                    />
+                    
+                    {/* Dropdown de Cidades */}
+                    {showCityDropdown && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'white',
+                        border: '2px solid #e0e0e0',
+                        borderTop: 'none',
+                        borderRadius: '0 0 8px 8px',
+                        maxHeight: '300px',
+                        overflowY: 'auto',
+                        zIndex: 1000
+                      }}>
+                        {filteredCities.map((city) => (
+                          <div
+                            key={city.id}
+                            onClick={() => handleAddCity(city)}
+                            style={{
+                              padding: '12px',
+                              borderBottom: '1px solid #f0f0f0',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '12px',
+                              transition: 'background-color 0.2s ease'
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.backgroundColor = '#f8f9fa';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.backgroundColor = 'white';
+                            }}
+                          >
+                            <img
+                              src={city.imageUrl}
+                              alt={city.name}
+                              style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '8px',
+                                objectFit: 'cover'
+                              }}
+                            />
+                            <div>
+                              <div style={{ fontWeight: 'bold' }}>
+                                {city.name}, {city.country}
+                              </div>
+                              <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                                {city.description.substring(0, 50)}...
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {filteredCities.length === 0 && citySearch.length >= 2 && (
+                          <div style={{
+                            padding: '20px',
+                            textAlign: 'center',
+                            color: '#666'
+                          }}>
+                            Nenhuma cidade encontrada para "{citySearch}"
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   
                   <p style={{
@@ -822,17 +911,25 @@ const EnhancedTripEditor = () => {
                     color: '#666',
                     margin: '0.5rem 0 0 0'
                   }}>
-                    💡 A IA detectará automaticamente o país, coordenadas e informações climáticas usando suas APIs reais
+                    💡 Temos {cityHelpers.getAllCities().length} cidades disponíveis na base de dados
                   </p>
                 </div>
 
-                {/* Lista de cidades */}
+                {/* Lista de Cidades Adicionadas */}
                 {tripData.cities.length > 0 && (
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '1.5rem'
                   }}>
+                    <h4 style={{
+                      fontSize: '1.2rem',
+                      color: '#2C3639',
+                      margin: '0'
+                    }}>
+                      📍 Cidades do Roteiro ({tripData.cities.length})
+                    </h4>
+                    
                     {tripData.cities.map((city, index) => (
                       <div
                         key={city.id}
@@ -851,25 +948,60 @@ const EnhancedTripEditor = () => {
                           alignItems: 'flex-start',
                           marginBottom: '1rem'
                         }}>
-                          <div>
-                            <h3 style={{
-                              fontSize: '1.4rem',
-                              fontFamily: 'Cormorant Garamond, serif',
-                              color: '#2C3639',
-                              margin: '0 0 0.5rem 0'
-                            }}>
-                              📍 {city.name}, {city.country}
-                            </h3>
-                            
-                            {city.weatherInfo && (
-                              <p style={{
-                                fontSize: '0.9rem',
-                                color: '#666',
-                                margin: '0'
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <img
+                              src={city.imageUrl}
+                              alt={city.name}
+                              style={{
+                                width: '60px',
+                                height: '60px',
+                                borderRadius: '10px',
+                                objectFit: 'cover'
+                              }}
+                            />
+                            <div>
+                              <h3 style={{
+                                fontSize: '1.4rem',
+                                fontFamily: 'Cormorant Garamond, serif',
+                                color: '#2C3639',
+                                margin: '0 0 0.5rem 0'
                               }}>
-                                {city.weatherInfo}
-                              </p>
-                            )}
+                                {index + 1}. {city.name}, {city.country}
+                              </h3>
+                              
+                              <div style={{
+                                display: 'flex',
+                                gap: '0.5rem',
+                                flexWrap: 'wrap',
+                                marginBottom: '0.5rem'
+                              }}>
+                                {city.tags.slice(0, 3).map((tag) => (
+                                  <span
+                                    key={tag}
+                                    style={{
+                                      backgroundColor: '#e8f4f3',
+                                      color: '#7C9A92',
+                                      padding: '2px 8px',
+                                      borderRadius: '12px',
+                                      fontSize: '0.7rem',
+                                      fontWeight: '500'
+                                    }}
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                              
+                              {city.weatherInfo && (
+                                <p style={{
+                                  fontSize: '0.8rem',
+                                  color: '#666',
+                                  margin: '0'
+                                }}>
+                                  {city.weatherInfo}
+                                </p>
+                              )}
+                            </div>
                           </div>
                           
                           <button
@@ -946,6 +1078,38 @@ const EnhancedTripEditor = () => {
                           </div>
                         </div>
 
+                        {/* Highlights da cidade */}
+                        <div style={{ marginBottom: '1rem' }}>
+                          <h5 style={{
+                            fontSize: '0.9rem',
+                            fontWeight: '600',
+                            color: '#2C3639',
+                            marginBottom: '0.5rem'
+                          }}>
+                            ⭐ Principais Atrações
+                          </h5>
+                          <div style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '0.5rem'
+                          }}>
+                            {city.highlights.slice(0, 5).map((highlight, idx) => (
+                              <span
+                                key={idx}
+                                style={{
+                                  backgroundColor: '#f8f9fa',
+                                  color: '#666',
+                                  padding: '4px 8px',
+                                  borderRadius: '12px',
+                                  fontSize: '0.8rem'
+                                }}
+                              >
+                                {highlight}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
                         {/* Notas da cidade */}
                         <div>
                           <label style={{
@@ -955,7 +1119,7 @@ const EnhancedTripEditor = () => {
                             color: '#2C3639',
                             marginBottom: '0.5rem'
                           }}>
-                            Notas Pessoais
+                            📝 Notas Pessoais
                           </label>
                           <textarea
                             value={city.userNotes}
@@ -987,7 +1151,7 @@ const EnhancedTripEditor = () => {
                   }}>
                     <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🗺️</div>
                     <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Nenhuma cidade adicionada</h3>
-                    <p>Adicione cidades para criar seu roteiro personalizado com IA</p>
+                    <p>Use os temas pré-definidos ou busque cidades individualmente</p>
                   </div>
                 )}
               </div>
@@ -1247,7 +1411,7 @@ const EnhancedTripEditor = () => {
                   {/* Header Preview */}
                   <div style={{
                     height: '200px',
-                    backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${tripData.image || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'})`,
+                    backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${tripData.image || tripData.cities[0]?.imageUrl || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'})`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     display: 'flex',
@@ -1323,36 +1487,63 @@ const EnhancedTripEditor = () => {
                                 backgroundColor: '#f8f9fa',
                                 padding: '1rem',
                                 borderRadius: '10px',
-                                borderLeft: '4px solid #7C9A92'
+                                borderLeft: '4px solid #7C9A92',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '1rem'
                               }}
                             >
-                              <h4 style={{
-                                fontSize: '1.2rem',
-                                color: '#2C3639',
-                                margin: '0 0 0.5rem 0'
-                              }}>
-                                📍 {city.name}, {city.country}
-                              </h4>
-                              
-                              {city.startDate && city.endDate && (
-                                <p style={{
-                                  fontSize: '0.9rem',
-                                  color: '#666',
+                              <img
+                                src={city.imageUrl}
+                                alt={city.name}
+                                style={{
+                                  width: '60px',
+                                  height: '60px',
+                                  borderRadius: '8px',
+                                  objectFit: 'cover'
+                                }}
+                              />
+                              <div style={{ flex: 1 }}>
+                                <h4 style={{
+                                  fontSize: '1.2rem',
+                                  color: '#2C3639',
                                   margin: '0 0 0.5rem 0'
                                 }}>
-                                  📅 {new Date(city.startDate).toLocaleDateString('pt-BR')} a {new Date(city.endDate).toLocaleDateString('pt-BR')}
-                                </p>
-                              )}
-                              
-                              {city.weatherInfo && (
-                                <p style={{
-                                  fontSize: '0.9rem',
-                                  color: '#666',
-                                  margin: '0'
+                                  {index + 1}. {city.name}, {city.country}
+                                </h4>
+                                
+                                {city.startDate && city.endDate && (
+                                  <p style={{
+                                    fontSize: '0.9rem',
+                                    color: '#666',
+                                    margin: '0 0 0.5rem 0'
+                                  }}>
+                                    📅 {new Date(city.startDate).toLocaleDateString('pt-BR')} a {new Date(city.endDate).toLocaleDateString('pt-BR')}
+                                  </p>
+                                )}
+                                
+                                <div style={{
+                                  display: 'flex',
+                                  gap: '0.5rem',
+                                  flexWrap: 'wrap'
                                 }}>
-                                  {city.weatherInfo}
-                                </p>
-                              )}
+                                  {city.highlights.slice(0, 3).map((highlight, idx) => (
+                                    <span
+                                      key={idx}
+                                      style={{
+                                        backgroundColor: '#e8f4f3',
+                                        color: '#7C9A92',
+                                        padding: '2px 8px',
+                                        borderRadius: '12px',
+                                        fontSize: '0.7rem',
+                                        fontWeight: '500'
+                                      }}
+                                    >
+                                      {highlight}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
                             </div>
                           ))}
                         </div>

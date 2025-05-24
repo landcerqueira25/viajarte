@@ -1,4 +1,4 @@
-// src/pages/TripView.jsx
+// src/pages/TripView.jsx - VERSÃO ATUALIZADA COM BASE LOCAL
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
@@ -37,6 +37,31 @@ const TripView = () => {
       loadTrip();
     }
   }, [id, navigate]);
+
+  // Função para extrair nome da cidade (compatível com base local)
+  const getCityName = (city) => {
+    if (typeof city === 'string') {
+      return city;
+    }
+    return city?.name || city?.title || 'Cidade';
+  };
+
+  // Função para extrair país da cidade
+  const getCityCountry = (city) => {
+    if (typeof city === 'string') {
+      return ''; // Não temos país para strings simples
+    }
+    return city?.country || '';
+  };
+
+  // Função para extrair imagem da cidade
+  const getCityImage = (city) => {
+    if (typeof city === 'object' && city?.imageUrl) {
+      return city.imageUrl;
+    }
+    // Imagem padrão para cidades
+    return 'https://images.unsplash.com/photo-1477587458883-47145ed94245?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80';
+  };
 
   // Função para calcular duração da viagem
   const calculateDuration = () => {
@@ -118,7 +143,7 @@ const TripView = () => {
       <div style={{
         position: 'relative',
         height: '400px',
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${trip.image || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'})`,
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${trip.image || getCityImage(trip.cities?.[0]) || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         display: 'flex',
@@ -217,6 +242,11 @@ const TripView = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               🌍 {trip.cities?.length || 0} cidades
             </div>
+            {trip.travelers && trip.travelers.filter(t => t.name && t.name.trim()).length > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                👥 {trip.travelers.filter(t => t.name && t.name.trim()).length} viajantes
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -236,11 +266,10 @@ const TripView = () => {
           gap: '0'
         }}>
           {[
-            { id: 'overview', label: '📋 Visão Geral', icon: '📋' },
-            { id: 'cities', label: '🏙️ Cidades', icon: '🏙️' },
-            { id: 'calendar', label: '📅 Calendário', icon: '📅' },
-            { id: 'checklist', label: '✅ Checklist', icon: '✅' },
-            { id: 'gallery', label: '📸 Galeria', icon: '📸' }
+            { id: 'overview', label: '📋 Visão Geral' },
+            { id: 'cities', label: '🏙️ Cidades' },
+            { id: 'travelers', label: '👥 Viajantes' },
+            { id: 'timeline', label: '📅 Cronograma' }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -291,7 +320,7 @@ const TripView = () => {
                   color: '#2C3639',
                   marginBottom: '1rem'
                 }}>
-                  Sobre esta viagem
+                  📖 Sobre esta viagem
                 </h3>
                 <p style={{
                   fontSize: '1.1rem',
@@ -316,7 +345,7 @@ const TripView = () => {
                   color: '#2C3639',
                   marginBottom: '1.5rem'
                 }}>
-                  Resumo
+                  📊 Resumo
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -328,9 +357,9 @@ const TripView = () => {
                     <strong>{trip.cities?.length || 0}</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#666' }}>Atividades:</span>
+                    <span style={{ color: '#666' }}>Viajantes:</span>
                     <strong>
-                      {trip.cities?.reduce((total, city) => total + (city.activities?.length || 0), 0) || 0}
+                      {trip.travelers?.filter(t => t.name && t.name.trim()).length || 1}
                     </strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -360,7 +389,7 @@ const TripView = () => {
                 color: '#2C3639',
                 marginBottom: '1.5rem'
               }}>
-                Destinos da Viagem
+                🗺️ Destinos da Viagem
               </h3>
               <div style={{
                 display: 'grid',
@@ -388,20 +417,34 @@ const TripView = () => {
                       e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
-                    <div style={{
-                      fontSize: '2rem',
-                      marginBottom: '0.5rem'
-                    }}>
-                      📍
-                    </div>
+                    <img
+                      src={getCityImage(city)}
+                      alt={getCityName(city)}
+                      style={{
+                        width: '60px',
+                        height: '60px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        marginBottom: '0.5rem'
+                      }}
+                    />
                     <h4 style={{
                       fontSize: '1.1rem',
                       fontWeight: '600',
                       color: '#2C3639',
-                      margin: '0'
+                      margin: '0 0 0.5rem 0'
                     }}>
-                      {city}
+                      {getCityName(city)}
                     </h4>
+                    {getCityCountry(city) && (
+                      <p style={{
+                        fontSize: '0.9rem',
+                        color: '#666',
+                        margin: '0'
+                      }}>
+                        {getCityCountry(city)}
+                      </p>
+                    )}
                   </div>
                 ))}
                 
@@ -446,13 +489,13 @@ const TripView = () => {
               marginBottom: '2rem',
               textAlign: 'center'
             }}>
-              Explore as Cidades
+              🏙️ Explore as Cidades
             </h2>
             
             {trip.cities && trip.cities.length > 0 ? (
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
                 gap: '2rem'
               }}>
                 {trip.cities.map((city, index) => (
@@ -463,8 +506,7 @@ const TripView = () => {
                       borderRadius: '20px',
                       overflow: 'hidden',
                       boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                      transition: 'all 0.3s ease',
-                      cursor: 'pointer'
+                      transition: 'all 0.3s ease'
                     }}
                     onMouseOver={(e) => {
                       e.currentTarget.style.transform = 'translateY(-8px)';
@@ -477,13 +519,24 @@ const TripView = () => {
                   >
                     <div style={{
                       height: '200px',
-                      background: 'linear-gradient(45deg, #7C9A92, #D9A6A0)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '3rem'
+                      backgroundImage: `url(${getCityImage(city)})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      position: 'relative'
                     }}>
-                      🏙️
+                      <div style={{
+                        position: 'absolute',
+                        top: '1rem',
+                        left: '1rem',
+                        backgroundColor: 'rgba(124, 154, 146, 0.9)',
+                        color: 'white',
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold'
+                      }}>
+                        Destino {index + 1}
+                      </div>
                     </div>
                     
                     <div style={{ padding: '1.5rem' }}>
@@ -491,44 +544,132 @@ const TripView = () => {
                         fontSize: '1.5rem',
                         fontFamily: 'Cormorant Garamond, serif',
                         color: '#2C3639',
-                        margin: '0 0 1rem 0'
+                        margin: '0 0 0.5rem 0'
                       }}>
-                        {city}
+                        {getCityName(city)}
+                        {getCityCountry(city) && (
+                          <span style={{ fontSize: '1.1rem', color: '#666', fontWeight: 'normal' }}>
+                            , {getCityCountry(city)}
+                          </span>
+                        )}
                       </h3>
-                      
-                      <p style={{
-                        color: '#666',
-                        fontSize: '0.9rem',
-                        margin: '0 0 1rem 0'
-                      }}>
-                        Descubra os encantos desta cidade incrível e todas as experiências que ela tem a oferecer.
-                      </p>
-                      
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        paddingTop: '1rem',
-                        borderTop: '1px solid #e0e0e0'
-                      }}>
-                        <span style={{
-                          fontSize: '0.8rem',
+
+                      {/* Datas da estadia */}
+                      {city.startDate && city.endDate && (
+                        <div style={{
+                          backgroundColor: '#e8f4f3',
+                          padding: '0.8rem',
+                          borderRadius: '8px',
+                          marginBottom: '1rem'
+                        }}>
+                          <div style={{ fontSize: '0.9rem', color: '#7C9A92', fontWeight: '600' }}>
+                            📅 Período de Estadia
+                          </div>
+                          <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.3rem' }}>
+                            {new Date(city.startDate).toLocaleDateString('pt-BR')} - {new Date(city.endDate).toLocaleDateString('pt-BR')}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Informação climática */}
+                      {city.weatherInfo && (
+                        <div style={{
+                          backgroundColor: '#f8f9fa',
+                          padding: '0.8rem',
+                          borderRadius: '8px',
+                          marginBottom: '1rem',
+                          fontSize: '0.9rem',
                           color: '#666'
                         }}>
-                          Destino {index + 1}
-                        </span>
-                        <button style={{
-                          backgroundColor: '#7C9A92',
-                          color: 'white',
-                          border: 'none',
-                          padding: '6px 12px',
-                          borderRadius: '15px',
-                          fontSize: '0.8rem',
-                          cursor: 'pointer'
+                          {city.weatherInfo}
+                        </div>
+                      )}
+
+                      {/* Highlights */}
+                      {city.highlights && city.highlights.length > 0 && (
+                        <div style={{ marginBottom: '1rem' }}>
+                          <h5 style={{
+                            fontSize: '0.9rem',
+                            fontWeight: '600',
+                            color: '#2C3639',
+                            marginBottom: '0.5rem'
+                          }}>
+                            ⭐ Principais Atrações
+                          </h5>
+                          <div style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '0.5rem'
+                          }}>
+                            {city.highlights.slice(0, 4).map((highlight, idx) => (
+                              <span
+                                key={idx}
+                                style={{
+                                  backgroundColor: '#e8f4f3',
+                                  color: '#7C9A92',
+                                  padding: '4px 8px',
+                                  borderRadius: '12px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: '500'
+                                }}
+                              >
+                                {highlight}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tags */}
+                      {city.tags && city.tags.length > 0 && (
+                        <div style={{ marginBottom: '1rem' }}>
+                          <div style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '0.5rem'
+                          }}>
+                            {city.tags.slice(0, 3).map((tag, idx) => (
+                              <span
+                                key={idx}
+                                style={{
+                                  backgroundColor: '#f0f0f0',
+                                  color: '#666',
+                                  padding: '4px 8px',
+                                  borderRadius: '12px',
+                                  fontSize: '0.7rem'
+                                }}
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Notas pessoais */}
+                      {city.userNotes && (
+                        <div style={{
+                          borderTop: '1px solid #e0e0e0',
+                          paddingTop: '1rem'
                         }}>
-                          Explorar →
-                        </button>
-                      </div>
+                          <h5 style={{
+                            fontSize: '0.9rem',
+                            fontWeight: '600',
+                            color: '#2C3639',
+                            marginBottom: '0.5rem'
+                          }}>
+                            📝 Notas Pessoais
+                          </h5>
+                          <p style={{
+                            fontSize: '0.9rem',
+                            color: '#666',
+                            margin: '0',
+                            fontStyle: 'italic'
+                          }}>
+                            {city.userNotes}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -572,47 +713,321 @@ const TripView = () => {
           </div>
         )}
 
-        {/* Outras Tabs - Placeholder */}
-        {['calendar', 'checklist', 'gallery'].includes(activeTab) && (
-          <div style={{
-            textAlign: 'center',
-            padding: '4rem 2rem',
-            backgroundColor: 'white',
-            borderRadius: '15px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-          }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
-              {activeTab === 'calendar' && '📅'}
-              {activeTab === 'checklist' && '✅'}
-              {activeTab === 'gallery' && '📸'}
-            </div>
-            <h3 style={{
-              fontSize: '2rem',
+        {/* Tab: Viajantes */}
+        {activeTab === 'travelers' && (
+          <div>
+            <h2 style={{
+              fontSize: '2.5rem',
               fontFamily: 'Cormorant Garamond, serif',
               color: '#2C3639',
-              marginBottom: '1rem'
+              marginBottom: '2rem',
+              textAlign: 'center'
             }}>
-              {activeTab === 'calendar' && 'Calendário da Viagem'}
-              {activeTab === 'checklist' && 'Checklist de Preparação'}
-              {activeTab === 'gallery' && 'Galeria de Fotos'}
-            </h3>
-            <p style={{ color: '#666', fontSize: '1.1rem', marginBottom: '2rem' }}>
-              Esta funcionalidade será implementada em breve. Por enquanto, aproveite as outras seções!
-            </p>
-            <button
-              onClick={() => setActiveTab('overview')}
-              style={{
-                backgroundColor: '#7C9A92',
-                color: 'white',
-                border: 'none',
-                padding: '12px 24px',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                cursor: 'pointer'
-              }}
-            >
-              Voltar à Visão Geral
-            </button>
+              👥 Grupo de Viajantes
+            </h2>
+            
+            {trip.travelers && trip.travelers.filter(t => t.name && t.name.trim()).length > 0 ? (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                gap: '2rem'
+              }}>
+                {trip.travelers.filter(t => t.name && t.name.trim()).map((traveler, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      backgroundColor: 'white',
+                      border: traveler.role === 'organizador' ? '2px solid #7C9A92' : '2px solid #e0e0e0',
+                      borderRadius: '15px',
+                      padding: '2rem',
+                      textAlign: 'center',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    <div style={{
+                      width: '80px',
+                      height: '80px',
+                      backgroundColor: traveler.role === 'organizador' ? '#7C9A92' : '#e0e0e0',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 1rem',
+                      fontSize: '2rem'
+                    }}>
+                      {traveler.role === 'organizador' ? '👑' : '👤'}
+                    </div>
+                    
+                    <h3 style={{
+                      fontSize: '1.3rem',
+                      fontFamily: 'Cormorant Garamond, serif',
+                      color: '#2C3639',
+                      margin: '0 0 0.5rem 0'
+                    }}>
+                      {traveler.name}
+                    </h3>
+                    
+                    {traveler.email && (
+                      <p style={{
+                        fontSize: '0.9rem',
+                        color: '#666',
+                        margin: '0 0 1rem 0'
+                      }}>
+                        📧 {traveler.email}
+                      </p>
+                    )}
+                    
+                    <span style={{
+                      fontSize: '0.8rem',
+                      backgroundColor: traveler.role === 'organizador' ? '#7C9A92' : '#e0e0e0',
+                      color: traveler.role === 'organizador' ? 'white' : '#666',
+                      padding: '6px 12px',
+                      borderRadius: '15px',
+                      fontWeight: 'bold'
+                    }}>
+                      {traveler.role === 'organizador' ? 'Organizador da Viagem' : 'Participante'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{
+                textAlign: 'center',
+                padding: '4rem 2rem',
+                backgroundColor: 'white',
+                borderRadius: '15px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>👤</div>
+                <h3 style={{
+                  fontSize: '2rem',
+                  fontFamily: 'Cormorant Garamond, serif',
+                  color: '#2C3639',
+                  marginBottom: '1rem'
+                }}>
+                  Viagem Solo
+                </h3>
+                <p style={{ color: '#666', fontSize: '1.1rem', marginBottom: '2rem' }}>
+                  Esta é uma viagem individual. Você pode adicionar companheiros editando a viagem.
+                </p>
+                <button
+                  onClick={() => navigate(`/trip/${id}/edit`)}
+                  style={{
+                    backgroundColor: '#7C9A92',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ✏️ Adicionar Viajantes
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab: Cronograma */}
+        {activeTab === 'timeline' && (
+          <div>
+            <h2 style={{
+              fontSize: '2.5rem',
+              fontFamily: 'Cormorant Garamond, serif',
+              color: '#2C3639',
+              marginBottom: '2rem',
+              textAlign: 'center'
+            }}>
+              📅 Cronograma da Viagem
+            </h2>
+            
+            {trip.cities && trip.cities.length > 0 ? (
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '15px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                padding: '2rem'
+              }}>
+                <div style={{ position: 'relative' }}>
+                  {trip.cities.map((city, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        marginBottom: index === trip.cities.length - 1 ? '0' : '2rem',
+                        position: 'relative'
+                      }}
+                    >
+                      {/* Linha do tempo */}
+                      <div style={{
+                        width: '4px',
+                        height: index === trip.cities.length - 1 ? '40px' : '100%',
+                        backgroundColor: '#7C9A92',
+                        position: 'absolute',
+                        left: '18px',
+                        top: '40px'
+                      }}></div>
+                      
+                      {/* Ponto da timeline */}
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        backgroundColor: '#7C9A92',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        marginRight: '1.5rem',
+                        flexShrink: 0,
+                        zIndex: 1,
+                        position: 'relative'
+                      }}>
+                        {index + 1}
+                      </div>
+                      
+                      {/* Conteúdo */}
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          backgroundColor: '#f8f9fa',
+                          padding: '1.5rem',
+                          borderRadius: '10px',
+                          borderLeft: '4px solid #7C9A92'
+                        }}>
+                          <h4 style={{
+                            fontSize: '1.3rem',
+                            fontFamily: 'Cormorant Garamond, serif',
+                            color: '#2C3639',
+                            margin: '0 0 0.5rem 0'
+                          }}>
+                            {getCityName(city)}
+                            {getCityCountry(city) && (
+                              <span style={{ fontSize: '1rem', color: '#666', fontWeight: 'normal' }}>
+                                , {getCityCountry(city)}
+                              </span>
+                            )}
+                          </h4>
+                          
+                          {city.startDate && city.endDate && (
+                            <p style={{
+                              fontSize: '0.9rem',
+                              color: '#7C9A92',
+                              fontWeight: '600',
+                              margin: '0 0 1rem 0'
+                            }}>
+                              📅 {new Date(city.startDate).toLocaleDateString('pt-BR')} - {new Date(city.endDate).toLocaleDateString('pt-BR')}
+                              <span style={{ color: '#666', fontWeight: 'normal', marginLeft: '1rem' }}>
+                                ({Math.ceil((new Date(city.endDate) - new Date(city.startDate)) / (1000 * 60 * 60 * 24)) + 1} dias)
+                              </span>
+                            </p>
+                          )}
+                          
+                          {city.weatherInfo && (
+                            <p style={{
+                              fontSize: '0.9rem',
+                              color: '#666',
+                              margin: '0 0 1rem 0'
+                            }}>
+                              {city.weatherInfo}
+                            </p>
+                          )}
+                          
+                          {city.highlights && city.highlights.length > 0 && (
+                            <div style={{ marginBottom: '1rem' }}>
+                              <strong style={{ fontSize: '0.9rem', color: '#2C3639' }}>Principais Atrações:</strong>
+                              <div style={{ marginTop: '0.5rem' }}>
+                                {city.highlights.slice(0, 4).map((highlight, idx) => (
+                                  <span
+                                    key={idx}
+                                    style={{
+                                      display: 'inline-block',
+                                      backgroundColor: '#e8f4f3',
+                                      color: '#7C9A92',
+                                      padding: '4px 8px',
+                                      borderRadius: '12px',
+                                      fontSize: '0.8rem',
+                                      marginRight: '0.5rem',
+                                      marginBottom: '0.5rem'
+                                    }}
+                                  >
+                                    {highlight}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {city.userNotes && (
+                            <div style={{
+                              backgroundColor: '#fff',
+                              padding: '1rem',
+                              borderRadius: '8px',
+                              border: '1px solid #e0e0e0'
+                            }}>
+                              <strong style={{ fontSize: '0.9rem', color: '#2C3639' }}>Notas:</strong>
+                              <p style={{
+                                fontSize: '0.9rem',
+                                color: '#666',
+                                margin: '0.5rem 0 0 0',
+                                fontStyle: 'italic'
+                              }}>
+                                {city.userNotes}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                textAlign: 'center',
+                padding: '4rem 2rem',
+                backgroundColor: 'white',
+                borderRadius: '15px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📅</div>
+                <h3 style={{
+                  fontSize: '2rem',
+                  fontFamily: 'Cormorant Garamond, serif',
+                  color: '#2C3639',
+                  marginBottom: '1rem'
+                }}>
+                  Nenhum cronograma disponível
+                </h3>
+                <p style={{ color: '#666', fontSize: '1.1rem', marginBottom: '2rem' }}>
+                  Adicione cidades à sua viagem para visualizar o cronograma detalhado.
+                </p>
+                <button
+                  onClick={() => navigate(`/trip/${id}/edit`)}
+                  style={{
+                    backgroundColor: '#7C9A92',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ✏️ Editar Viagem
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -643,6 +1058,7 @@ const TripView = () => {
           e.currentTarget.style.transform = 'scale(1)';
           e.currentTarget.style.boxShadow = '0 4px 16px rgba(217, 166, 160, 0.4)';
         }}
+        title="Editar Viagem"
       >
         ✏️
       </button>
