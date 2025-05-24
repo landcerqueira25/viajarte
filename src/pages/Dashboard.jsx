@@ -450,7 +450,10 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Navbar */}
+     // Apenas a parte da Navbar do Dashboard com visual limpo
+// Cole isso no seu Dashboard.jsx, substituindo a seção <nav>
+
+      {/* Navbar Limpa */}
       <nav style={{
         backgroundColor: '#7C9A92',
         color: 'white',
@@ -472,10 +475,10 @@ const Dashboard = () => {
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem'
+            letterSpacing: '1px'
           }}
         >
-          🌟 Viajarte
+          Viajarte
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -501,7 +504,7 @@ const Dashboard = () => {
               e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)';
             }}
           >
-            🏠 Home
+            Home
           </button>
 
           <button
@@ -526,7 +529,7 @@ const Dashboard = () => {
               e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)';
             }}
           >
-            ⚙️ Configurações
+            Configurações
           </button>
 
           <div style={{
@@ -539,7 +542,8 @@ const Dashboard = () => {
             justifyContent: 'center',
             fontWeight: 'bold',
             cursor: 'pointer',
-            border: '2px solid rgba(255,255,255,0.3)'
+            border: '2px solid rgba(255,255,255,0.3)',
+            fontSize: '0.9rem'
           }}
           onClick={() => navigate('/settings')}
           >

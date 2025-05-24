@@ -1,4 +1,4 @@
-// src/pages/Home.jsx
+// src/pages/Home.jsx - VERSÃO VISUAL LIMPA
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -45,9 +45,10 @@ const Home = () => {
           fontSize: '2rem',
           fontWeight: 'bold',
           fontFamily: 'Cormorant Garamond, serif',
-          color: 'white'
+          color: 'white',
+          letterSpacing: '1px'
         }}>
-          🌟 Viajarte
+          Viajarte
         </div>
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -73,29 +74,27 @@ const Home = () => {
               e.currentTarget.style.color = 'white';
             }}
           >
-            ⚙️ Configurações
+            Configurações
           </button>
           
           <button
             onClick={() => navigate('/dashboard')}
             style={{
-              backgroundColor: 'transparent',
-              color: 'white',
+              backgroundColor: 'white',
+              color: '#7C9A92',
               border: '2px solid white',
               padding: '10px 20px',
               borderRadius: '25px',
               fontSize: '1rem',
               cursor: 'pointer',
-              fontWeight: '500',
+              fontWeight: '600',
               transition: 'all 0.3s ease'
             }}
             onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = 'white';
-              e.currentTarget.style.color = '#7C9A92';
+              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.9)';
             }}
             onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = 'white';
+              e.currentTarget.style.backgroundColor = 'white';
             }}
           >
             Acessar Dashboard
@@ -133,7 +132,7 @@ const Home = () => {
             opacity: '0.9'
           }}>
             Planeje suas aventuras de forma simples e intuitiva. 
-            Organize destinos, atividades e memories tudo em um só lugar.
+            Organize destinos, atividades e memórias tudo em um só lugar.
           </p>
           
           <div style={{
@@ -165,7 +164,7 @@ const Home = () => {
                 e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)';
               }}
             >
-              🚀 Começar Agora
+              Começar Agora
             </button>
             
             <button
@@ -188,7 +187,7 @@ const Home = () => {
                 e.currentTarget.style.backgroundColor = 'transparent';
               }}
             >
-              ✨ Descobrir Mais
+              Descobrir Mais
             </button>
           </div>
         </div>
@@ -354,7 +353,7 @@ const Home = () => {
                 whiteSpace: 'nowrap'
               }}
             >
-              📬 Me Avise
+              Me Avise
             </button>
           </form>
           
@@ -379,7 +378,7 @@ const Home = () => {
               e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
-            🌟 Começar Gratuitamente
+            Começar Gratuitamente
           </button>
         </div>
       </div>
@@ -392,11 +391,13 @@ const Home = () => {
         textAlign: 'center'
       }}>
         <div style={{
-          fontSize: '1.5rem',
+          fontSize: '1.8rem',
           fontFamily: 'Cormorant Garamond, serif',
-          marginBottom: '1rem'
+          marginBottom: '1rem',
+          fontWeight: 'bold',
+          letterSpacing: '1px'
         }}>
-          🌟 Viajarte
+          Viajarte
         </div>
         
         <p style={{
@@ -421,7 +422,9 @@ const Home = () => {
               color: 'white', 
               textDecoration: 'none', 
               opacity: '0.7',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              fontSize: '1rem',
+              padding: '0.5rem'
             }}
           >
             Dashboard
@@ -434,7 +437,9 @@ const Home = () => {
               color: 'white', 
               textDecoration: 'none', 
               opacity: '0.7',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              fontSize: '1rem',
+              padding: '0.5rem'
             }}
           >
             Configurações
@@ -447,7 +452,9 @@ const Home = () => {
               color: 'white', 
               textDecoration: 'none', 
               opacity: '0.7',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              fontSize: '1rem',
+              padding: '0.5rem'
             }}
           >
             Contato
@@ -460,7 +467,9 @@ const Home = () => {
               color: 'white', 
               textDecoration: 'none', 
               opacity: '0.7',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              fontSize: '1rem',
+              padding: '0.5rem'
             }}
           >
             Privacidade
