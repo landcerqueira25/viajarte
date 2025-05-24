@@ -1,6 +1,7 @@
-// src/pages/Home.jsx - VERSÃO VISUAL LIMPA
+// src/pages/Home.jsx - VERSÃO COM NOVO LOGO
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Logo from '../components/Logo';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -41,15 +42,11 @@ const Home = () => {
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         backdropFilter: 'blur(10px)'
       }}>
-        <div style={{
-          fontSize: '2rem',
-          fontWeight: 'bold',
-          fontFamily: 'Cormorant Garamond, serif',
-          color: 'white',
-          letterSpacing: '1px'
-        }}>
-          Viajarte
-        </div>
+        <Logo 
+          size="medium" 
+          color="white" 
+          onClick={() => navigate('/')}
+        />
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <button
@@ -113,6 +110,19 @@ const Home = () => {
         color: 'white'
       }}>
         <div style={{ maxWidth: '800px' }}>
+          {/* Logo grande no hero */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            marginBottom: '2rem' 
+          }}>
+            <Logo 
+              size="xlarge" 
+              color="white" 
+              showText={false}
+            />
+          </div>
+          
           <h1 style={{
             fontSize: '4rem',
             fontFamily: 'Cormorant Garamond, serif',
@@ -390,14 +400,11 @@ const Home = () => {
         padding: '3rem 2rem 2rem',
         textAlign: 'center'
       }}>
-        <div style={{
-          fontSize: '1.8rem',
-          fontFamily: 'Cormorant Garamond, serif',
-          marginBottom: '1rem',
-          fontWeight: 'bold',
-          letterSpacing: '1px'
-        }}>
-          Viajarte
+        <div style={{ marginBottom: '2rem' }}>
+          <Logo 
+            size="medium" 
+            color="white" 
+          />
         </div>
         
         <p style={{

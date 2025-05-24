@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
+import Logo from '../components/Logo';
 
 // Viagens de exemplo (fallback)
 const defaultTrips = [
@@ -321,20 +322,11 @@ const Dashboard = () => {
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <button
+        <Logo 
+          size="medium" 
+          color="white" 
           onClick={() => navigate('/')}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'white',
-            fontSize: '1.8rem',
-            fontWeight: 'bold',
-            fontFamily: 'Cormorant Garamond, serif',
-            cursor: 'pointer'
-          }}
-        >
-          Viajarte
-        </button>
+        />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <button
