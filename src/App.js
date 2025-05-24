@@ -6,7 +6,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Home from './pages/Home.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import TripView from './pages/TripView.jsx';
-import TripEditor from './pages/TripEditor.jsx';
+import TripEditor from './pages/EnhancedTripEditor';
 import Settings from './pages/Settings.jsx';
 
 // Importar estilos
