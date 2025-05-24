@@ -1,13 +1,11 @@
-// src/pages/EnhancedTripEditor.jsx
-// EDITOR AVANÇADO COM BASE DE DADOS LOCAL (SEM IA)
-
+// src/pages/EnhancedTripEditor.jsx - VERSÃO CORRIGIDA SEM TEMAS
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, addDoc, updateDoc, collection } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
 // Importar base de dados local
-import { citiesDatabase, cityHelpers, travelThemes } from '../data/citiesDatabase';
+import { citiesDatabase, cityHelpers } from '../data/citiesDatabase';
 
 const EnhancedTripEditor = () => {
   const { id } = useParams();
@@ -38,9 +36,6 @@ const EnhancedTripEditor = () => {
   
   // Estados para adicionar viajantes
   const [newTraveler, setNewTraveler] = useState({ name: '', email: '' });
-
-  // Estados para temas pré-definidos
-  const [selectedTheme, setSelectedTheme] = useState('');
 
   // Carregar dados da viagem se estiver editando
   const loadTripData = useCallback(async () => {
@@ -85,13 +80,15 @@ const EnhancedTripEditor = () => {
       setFilteredCities(filtered);
       setShowCityDropdown(true);
     } else {
-      setFilteredCities(cityHelpers.getAllCities());
+      setFilteredCities([]);
       setShowCityDropdown(false);
     }
   }, [citySearch]);
 
-  // Função para adicionar cidade da base de dados
+  // Função para adicionar cidade da base de dados - CORRIGIDA
   const handleAddCity = (cityData) => {
+    console.log('Adicionando cidade:', cityData);
+    
     // Verificar se a cidade já foi adicionada
     const cityExists = tripData.cities.some(city => city.id === cityData.id);
     
@@ -135,55 +132,11 @@ const EnhancedTripEditor = () => {
       cities: [...prev.cities, tripCity]
     }));
     
-    // Limpar busca
+    // Limpar busca e fechar dropdown
     setCitySearch('');
     setShowCityDropdown(false);
     
     alert(`✅ ${cityData.name} adicionada ao roteiro!`);
-  };
-
-  // Função para aplicar tema pré-definido
-  const handleApplyTheme = (themeId) => {
-    const theme = travelThemes[themeId];
-    if (!theme) return;
-
-    const themeCities = theme.cities.map(cityId => {
-      const cityData = cityHelpers.getCityById(cityId);
-      return cityData;
-    }).filter(Boolean);
-
-    // Calcular datas automáticas
-    const totalDays = tripData.startDate && tripData.endDate 
-      ? Math.ceil((new Date(tripData.endDate) - new Date(tripData.startDate)) / (1000 * 60 * 60 * 1000)) + 1
-      : 14;
-    
-    const daysPerCity = Math.max(2, Math.floor(totalDays / themeCities.length));
-    
-    const tripCities = themeCities.map((cityData, index) => {
-      const startDate = new Date(new Date(tripData.startDate).getTime() + (index * daysPerCity * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
-      const endDate = new Date(new Date(startDate).getTime() + ((daysPerCity - 1) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
-      
-      const startMonth = new Date(startDate).getMonth() + 1;
-      const weatherInfo = cityHelpers.getWeatherInfo(cityData.id, startMonth);
-
-      return {
-        ...cityData,
-        startDate: startDate,
-        endDate: endDate,
-        weatherInfo: weatherInfo,
-        userNotes: '',
-        activities: []
-      };
-    });
-
-    setTripData(prev => ({
-      ...prev,
-      name: prev.name || theme.name,
-      description: prev.description || theme.description,
-      cities: tripCities
-    }));
-
-    alert(`✅ Tema "${theme.name}" aplicado! ${themeCities.length} cidades adicionadas.`);
   };
 
   // Função para remover cidade
@@ -231,7 +184,7 @@ const EnhancedTripEditor = () => {
     }));
   };
 
-  // Função para gerar descrição automática (sem IA)
+  // Função para gerar descrição automática
   const handleGenerateDescription = () => {
     if (tripData.cities.length === 0) {
       alert('Adicione pelo menos uma cidade para gerar a descrição');
@@ -430,25 +383,6 @@ const EnhancedTripEditor = () => {
         margin: '0 auto',
         padding: '0 2rem 4rem'
       }}>
-        {/* Status da Base de Dados */}
-        <div style={{
-          backgroundColor: '#e8f5e8',
-          borderRadius: '10px',
-          padding: '1rem',
-          marginBottom: '2rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '1rem'
-        }}>
-          <span style={{ fontSize: '1.5rem' }}>🗂️</span>
-          <div>
-            <strong>Base de Dados Local Ativa</strong>
-            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: '#666' }}>
-              Temos {cityHelpers.getAllCities().length} cidades disponíveis nos temas: Europa Clássica, Capitais Imperiais, Rota Romântica e Arte & Museus.
-            </p>
-          </div>
-        </div>
-
         {/* Navegação por Tabs */}
         <div style={{
           backgroundColor: 'white',
@@ -742,68 +676,6 @@ const EnhancedTripEditor = () => {
                   🏙️ Cidades do Roteiro
                 </h2>
 
-                {/* Temas Pré-definidos */}
-                <div style={{
-                  backgroundColor: '#e8f4f3',
-                  padding: '1.5rem',
-                  borderRadius: '10px',
-                  marginBottom: '2rem'
-                }}>
-                  <h4 style={{
-                    fontSize: '1.2rem',
-                    color: '#2C3639',
-                    marginBottom: '1rem'
-                  }}>
-                    🎨 Temas Pré-definidos
-                  </h4>
-                  
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: '1rem',
-                    marginBottom: '1rem'
-                  }}>
-                    {Object.entries(travelThemes).map(([themeId, theme]) => (
-                      <button
-                        key={themeId}
-                        onClick={() => handleApplyTheme(themeId)}
-                        style={{
-                          backgroundColor: 'white',
-                          border: '2px solid #7C9A92',
-                          borderRadius: '8px',
-                          padding: '1rem',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'all 0.3s ease'
-                        }}
-                        onMouseOver={(e) => {
-                          e.currentTarget.style.backgroundColor = '#7C9A92';
-                          e.currentTarget.style.color = 'white';
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.backgroundColor = 'white';
-                          e.currentTarget.style.color = 'inherit';
-                        }}
-                      >
-                        <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                          {theme.name}
-                        </div>
-                        <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
-                          {theme.cities.length} cidades • {theme.duration}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                  
-                  <p style={{
-                    fontSize: '0.8rem',
-                    color: '#666',
-                    margin: '0'
-                  }}>
-                    💡 Clique em um tema para adicionar as cidades automaticamente
-                  </p>
-                </div>
-
                 {/* Buscar e Adicionar Cidades */}
                 <div style={{
                   backgroundColor: '#f8f9fa',
@@ -817,7 +689,7 @@ const EnhancedTripEditor = () => {
                     color: '#2C3639',
                     marginBottom: '1rem'
                   }}>
-                    🔍 Buscar Cidades
+                    🔍 Buscar e Adicionar Cidades
                   </h4>
                   
                   <div style={{ position: 'relative' }}>
@@ -825,8 +697,12 @@ const EnhancedTripEditor = () => {
                       type="text"
                       value={citySearch}
                       onChange={(e) => setCitySearch(e.target.value)}
-                      onFocus={() => setShowCityDropdown(true)}
-                      placeholder="Digite o nome da cidade..."
+                      onFocus={() => {
+                        if (filteredCities.length > 0) {
+                          setShowCityDropdown(true);
+                        }
+                      }}
+                      placeholder="Digite o nome da cidade (ex: Paris, Roma, Tóquio...)"
                       style={{
                         width: '100%',
                         padding: '12px',
@@ -837,8 +713,8 @@ const EnhancedTripEditor = () => {
                       }}
                     />
                     
-                    {/* Dropdown de Cidades */}
-                    {showCityDropdown && (
+                    {/* Dropdown de Cidades - CORRIGIDO */}
+                    {showCityDropdown && filteredCities.length > 0 && (
                       <div style={{
                         position: 'absolute',
                         top: '100%',
@@ -850,12 +726,18 @@ const EnhancedTripEditor = () => {
                         borderRadius: '0 0 8px 8px',
                         maxHeight: '300px',
                         overflowY: 'auto',
-                        zIndex: 1000
+                        zIndex: 1000,
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
                       }}>
                         {filteredCities.map((city) => (
                           <div
                             key={city.id}
-                            onClick={() => handleAddCity(city)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('Clicou na cidade:', city);
+                              handleAddCity(city);
+                            }}
                             style={{
                               padding: '12px',
                               borderBottom: '1px solid #f0f0f0',
@@ -863,12 +745,13 @@ const EnhancedTripEditor = () => {
                               display: 'flex',
                               alignItems: 'center',
                               gap: '12px',
-                              transition: 'background-color 0.2s ease'
+                              transition: 'background-color 0.2s ease',
+                              backgroundColor: 'white'
                             }}
-                            onMouseOver={(e) => {
+                            onMouseEnter={(e) => {
                               e.currentTarget.style.backgroundColor = '#f8f9fa';
                             }}
-                            onMouseOut={(e) => {
+                            onMouseLeave={(e) => {
                               e.currentTarget.style.backgroundColor = 'white';
                             }}
                           >
@@ -879,30 +762,46 @@ const EnhancedTripEditor = () => {
                                 width: '40px',
                                 height: '40px',
                                 borderRadius: '8px',
-                                objectFit: 'cover'
+                                objectFit: 'cover',
+                                flexShrink: 0
+                              }}
+                              onError={(e) => {
+                                e.target.src = 'https://images.unsplash.com/photo-1477587458883-47145ed94245?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80';
                               }}
                             />
-                            <div>
-                              <div style={{ fontWeight: 'bold' }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 'bold', color: '#2C3639' }}>
                                 {city.name}, {city.country}
                               </div>
                               <div style={{ fontSize: '0.8rem', color: '#666' }}>
                                 {city.description.substring(0, 50)}...
                               </div>
                             </div>
+                            <div style={{
+                              fontSize: '0.8rem',
+                              color: '#7C9A92',
+                              fontWeight: 'bold'
+                            }}>
+                              Clique para adicionar
+                            </div>
                           </div>
                         ))}
-                        
-                        {filteredCities.length === 0 && citySearch.length >= 2 && (
-                          <div style={{
-                            padding: '20px',
-                            textAlign: 'center',
-                            color: '#666'
-                          }}>
-                            Nenhuma cidade encontrada para "{citySearch}"
-                          </div>
-                        )}
                       </div>
+                    )}
+                    
+                    {/* Fechar dropdown quando clicar fora */}
+                    {showCityDropdown && (
+                      <div
+                        style={{
+                          position: 'fixed',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          zIndex: 999
+                        }}
+                        onClick={() => setShowCityDropdown(false)}
+                      />
                     )}
                   </div>
                   
@@ -957,6 +856,9 @@ const EnhancedTripEditor = () => {
                                 height: '60px',
                                 borderRadius: '10px',
                                 objectFit: 'cover'
+                              }}
+                              onError={(e) => {
+                                e.target.src = 'https://images.unsplash.com/photo-1477587458883-47145ed94245?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80';
                               }}
                             />
                             <div>
@@ -1151,7 +1053,7 @@ const EnhancedTripEditor = () => {
                   }}>
                     <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🗺️</div>
                     <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Nenhuma cidade adicionada</h3>
-                    <p>Use os temas pré-definidos ou busque cidades individualmente</p>
+                    <p>Use a busca acima para encontrar e adicionar cidades ao seu roteiro</p>
                   </div>
                 )}
               </div>
@@ -1501,6 +1403,9 @@ const EnhancedTripEditor = () => {
                                   height: '60px',
                                   borderRadius: '8px',
                                   objectFit: 'cover'
+                                }}
+                                onError={(e) => {
+                                  e.target.src = 'https://images.unsplash.com/photo-1477587458883-47145ed94245?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80';
                                 }}
                               />
                               <div style={{ flex: 1 }}>
